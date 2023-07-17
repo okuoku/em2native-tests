@@ -1,7 +1,7 @@
 // Based on imgui_impl_opengl3.cpp
 
 #define CWGL_DECL_ENUMS
-#include "cwgl.h"
+#include "yuniframe/cwgl.h"
 #include "imgui.h"
 
 /* Global Objects */

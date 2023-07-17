@@ -1,6 +1,6 @@
 #define CWGL_DECL_ENUMS
-#include "cwgl.h"
-#include "yfrm.h"
+#include "yuniframe/cwgl.h"
+#include "yuniframe/yfrm.h"
 
 #include "imgui.h"
 
