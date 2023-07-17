@@ -1,3 +1,15 @@
+# Choose some default
+
+if(NOT TESTSLOT)
+    if(WIN32)
+        set(TESTSLOT SDL2-ANGLE-DirectX11)
+    elseif(APPLE)
+        set(TESTSLOT SDL2-ANGLE-Metal)
+    else()
+        message(FATAL_ERROR "Could not determine TESTSLOT")
+    endif()
+endif()
+
 # Tentative
 cmake_minimum_required(VERSION 3.12)
 project(yuniframe-tests NONE)
@@ -6,11 +18,23 @@ project(yuniframe-tests NONE)
 
 set(YFRM_SDL2_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/sdl2header)
 
-set(YFRM_CWGL_USE_ANGLE ON)
-set(YFRM_CWGL_USE_VULKAN OFF)
-set(YFRM_CWGL_USE_DX11 ON)
-set(YFRM_CWGL_EXPERIMENTAL_TRACKER OFF)
-set(YFRM_CWGL_USE_METAL OFF)
+if(TESTSLOT STREQUAL "SDL2-ANGLE-DirectX11")
+    set(YFRM_CWGL_USE_ANGLE ON)
+    set(YFRM_CWGL_USE_VULKAN OFF)
+    set(YFRM_CWGL_USE_DX11 ON)
+    set(YFRM_CWGL_USE_METAL OFF)
+    set(YFRM_CWGL_EXPERIMENTAL_TRACKER OFF)
+elseif(TESTSLOT STREQUAL "SDL2-ANGLE-Vulkan")
+    set(YFRM_CWGL_USE_ANGLE ON)
+    set(YFRM_CWGL_USE_VULKAN ON)
+    set(YFRM_CWGL_USE_DX11 OFF)
+    set(YFRM_CWGL_USE_METAL OFF)
+    set(YFRM_CWGL_EXPERIMENTAL_TRACKER OFF)
+else()
+    message(FATAL_ERROR "Unknown TESTSLOT(${TESTSLOT})")
+endif()
+
+
 set(YFRM_FS_USE_CXX17 ON)
 
 set(CWGL_KHRONOS_HEADER_DIR 
@@ -29,3 +53,5 @@ add_subdirectory(integ/yuniframe yfrm)
 
 # App
 add_subdirectory(native/imgui test-imgui)
+
+message(STATUS "TESTSLOT: ${TESTSLOT}")

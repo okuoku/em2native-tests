@@ -21,14 +21,27 @@ target_link_libraries(test-imgui
 add_executable(test-imgui-win32 WIN32
     dummy.cpp)
 
+
+set(backendlibs)
+if(YFRM_CWGL_USE_DX11)
+    list(APPEND backendlibs 
+        # angle (Yuniframe)
+        dxgi
+        dxguid
+        # yuniframe
+        d3d11
+        )
+endif()
+if(YFRM_CWGL_USE_VULKAN OR YFRM_CWGL_USE_METAL)
+    list(APPEND backendlibs
+        SPIRV-Tools
+        )
+endif()
+
 # FIXME: Why do we need yfrm cwgl here?
 target_link_libraries(test-imgui-win32 PRIVATE 
     angle_static
-    # angle (Yuniframe)
-    dxgi
-    dxguid
-    # yuniframe
-    d3d11
-
-    # SPIRV-Tools
+    ${backendlibs}
     test-imgui yfrm cwgl)
+
+

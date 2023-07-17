@@ -1,0 +1,131 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "base",
+            "description": "base config (meta)",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "installDir": "${sourceDir}/out/install/${presetName}",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "basevcpkg",
+            "description": "base config (meta, vcpkg)",
+            "hidden": true,
+            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+            "environment": {
+                "VCPKG_FEATURE_FLAGS": "manifests,versions,binarycaching,registries"
+            }
+        },
+        {
+            "name": "x64-debug",
+            "displayName": "x64 Debug",
+            "description": "x64 arch (Debug)",
+            "hidden": true,
+            "inherits": "base",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "x64-release",
+            "displayName": "x64 Release",
+            "description": "x64 arch (RelWithDebInfo)",
+            "hidden": true,
+            "inherits": "x64-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "x86-debug",
+            "displayName": "x86 Debug",
+            "description": "x86 arch (Debug)",
+            "hidden": true,
+            "inherits": "base",
+            "architecture": {
+                "value": "x86",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "x86-release",
+            "displayName": "x86 Release",
+            "description": "x86 arch (RelWithDebInfo)",
+            "hidden": true,
+            "inherits": "x86-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "x64-dx11-debug",
+            "displayName": "x64-dx11-debug",
+            "description": "x64-dx11-debug",
+            "hidden": false,
+            "inherits": "x64-debug",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "TESTSLOT": "SDL2-ANGLE-DirectX11"
+            }
+        },
+        {
+            "name": "x64-dx11-release",
+            "displayName": "x64-dx11-release",
+            "description": "x64-dx11-release",
+            "hidden": false,
+            "inherits": "x64-release",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "TESTSLOT": "SDL2-ANGLE-DirectX11"
+            }
+        },
+        {
+            "name": "x64-vulkan-debug",
+            "displayName": "x64-vulkan-debug",
+            "description": "x64-vulkan-debug",
+            "hidden": false,
+            "inherits": "x64-debug",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "TESTSLOT": "SDL2-ANGLE-Vulkan"
+            }
+        },
+        {
+            "name": "x64-vulkan-release",
+            "displayName": "x64-vulkan-release",
+            "description": "x64-vulkan-release",
+            "hidden": false,
+            "inherits": "x64-release",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "TESTSLOT": "SDL2-ANGLE-Vulkan"
+            }
+        }
+    ]
+}
