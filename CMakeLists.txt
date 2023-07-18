@@ -43,13 +43,19 @@ set(YFRM_CWGL_PREFIX
     ${CMAKE_CURRENT_LIST_DIR}/integ/cwgl)
 
 # External libs
-add_subdirectory(integ/proj/glslang glslang)
-add_subdirectory(integ/proj/angle angle) # Angle (sometimes) depends glslang
+if(YFRM_CWGL_USE_VULKAN OR YFRM_CWGL_USE_METAL)
+    add_subdirectory(integ/proj/glslang glslang)
+endif()
+if(YFRM_CWGL_USE_ANGLE)
+    add_subdirectory(integ/proj/angle angle) # Angle (sometimes) depends glslang
+endif()
 add_subdirectory(integ/proj/sdl2 sdl2)
 
 # Libs
+set(NCCC_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/nccc)
+set(CWGL_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/cwgl)
 add_subdirectory(integ/cwgl cwgl)
-add_subdirectory(integ/yuniframe yfrm)
+add_subdirectory(integ/yuniframe yfrm) # Module
 
 # App
 add_subdirectory(native/imgui test-imgui)
