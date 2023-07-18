@@ -4,3 +4,6 @@
 [submodule "integ"]
 	path = integ
 	url = https://github.com/okuoku/em2native-integ
+[submodule "ribbon-integ"]
+	path = ribbon-integ
+	url = https://github.com/okuoku/ribbon-integ
