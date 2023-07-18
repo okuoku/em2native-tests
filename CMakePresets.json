@@ -6,8 +6,8 @@
             "description": "base config (meta)",
             "hidden": true,
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "installDir": "${sourceDir}/out/install/${presetName}",
+            "binaryDir": "${sourceDir}/_out/build/${presetName}",
+            "installDir": "${sourceDir}/_out/install/${presetName}",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
