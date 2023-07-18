@@ -42,6 +42,6 @@ endif()
 target_link_libraries(test-imgui-win32 PRIVATE 
     angle_static
     ${backendlibs}
-    test-imgui yfrm cwgl)
+    test-imgui yfrm yfrm_main cwgl)
 
 
