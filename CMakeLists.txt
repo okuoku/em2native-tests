@@ -14,6 +14,8 @@ endif()
 cmake_minimum_required(VERSION 3.12)
 project(yuniframe-tests NONE)
 
+enable_testing()
+
 # Setup
 
 set(YFRM_SDL2_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/sdl2header)
@@ -57,7 +59,12 @@ set(CWGL_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/cwgl)
 add_subdirectory(integ/cwgl cwgl)
 add_subdirectory(integ/yuniframe yfrm) # Module
 
-# App
+# Ribbon
+set(YUNI_SKIP_TESTS ON)
+set(RIBBON_SKIP_TESTS ON)
+add_subdirectory(ribbon-integ)
+
+# Apps
 add_subdirectory(native/imgui test-imgui)
 
 message(STATUS "TESTSLOT: ${TESTSLOT}")
