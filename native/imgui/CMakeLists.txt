@@ -37,6 +37,12 @@ if(YFRM_CWGL_USE_VULKAN OR YFRM_CWGL_USE_METAL)
         SPIRV-Tools
         )
 endif()
+if(APPLE)
+    # FIXME: Why do we need it actually?
+    list(APPEND backendlibs
+        "-framework IOSurface"
+        )
+endif()
 
 # FIXME: Why do we need yfrm cwgl here?
 target_link_libraries(test-imgui-win32 PRIVATE 
