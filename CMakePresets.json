@@ -126,6 +126,34 @@
             "cacheVariables": {
                 "TESTSLOT": "SDL2-ANGLE-Vulkan"
             }
+        },
+        {
+            "name": "x64-cwgl-vulkan-debug",
+            "displayName": "x64-cwgl-vulkan-debug",
+            "description": "x64-cwgl-vulkan-debug",
+            "hidden": false,
+            "inherits": "x64-debug",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "TESTSLOT": "SDL2-CWGL-Vulkan"
+            }
+        },
+        {
+            "name": "x64-cwgl-vulkan-release",
+            "displayName": "x64-cwgl-vulkan-release",
+            "description": "x64-cwgl-vulkan-release",
+            "hidden": false,
+            "inherits": "x64-release",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "TESTSLOT": "SDL2-CWGL-Vulkan"
+            }
         }
     ]
 }

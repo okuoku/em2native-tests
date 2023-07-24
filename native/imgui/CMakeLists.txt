@@ -34,9 +34,24 @@ if(YFRM_CWGL_USE_DX11)
 endif()
 if(YFRM_CWGL_USE_VULKAN OR YFRM_CWGL_USE_METAL)
     list(APPEND backendlibs
-        SPIRV-Tools
+        SPIRV-Tools-static
         )
 endif()
+if(YFRM_CWGL_USE_ANGLE)
+    list(APPEND backendlibs
+        angle_static)
+endif()
+if(YFRM_CWGL_EXPERIMENTAL_TRACKER)
+    # FIXME: Move this to shxm dependency
+    list(APPEND backendlibs
+        glslang
+        my-glslang-default-resource-limits
+        SPIRV
+        SPIRV-Tools-opt
+        spirv-cross-c
+        )
+endif()
+
 if(APPLE)
     if(YFRM_CWGL_USE_VULKAN)
         # FIXME: Use CMake native feature later
@@ -58,7 +73,6 @@ endif()
 
 # FIXME: Why do we need yfrm cwgl here?
 target_link_libraries(test-imgui-win32 PRIVATE 
-    angle_static
     ${backendlibs}
     test-imgui yfrm yfrm_main cwgl)
 
