@@ -1,0 +1,95 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'org.cltn.yfrm'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "org.cltn.yfrm"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                arguments "-DTESTSLOT=SDL2-CWGL-Vulkan"
+                cppFlags ''
+            }
+        }
+
+        sourceSets {
+            main {
+                java {
+                    srcDirs "../../integ/ext/platform/SDL2/android-project/app/src/main/java"
+                }
+                manifest.srcFile "../../Android.srcs/_common/AndroidManifest.xml"
+                res {
+                    srcDirs "../../Android.srcs/_common/res"
+                }
+
+            }
+        }
+    }
+    flavorDimensions "default"
+    productFlavors {
+        app_test1 {
+            applicationId "org.cltn.yfrm.userapp.app_test1"
+            externalNativeBuild {
+                cmake {
+                    targets "test-imgui-so"
+                }
+            }
+            sourceSets {
+                main {
+                    java {
+                        srcDirs "../../Android.srcs/test1/java"
+                    }
+                    manifest {
+                        srcFile "../../Android.srcs/test1/AndroidManifest.xml"
+                    }
+                }
+            }
+        }
+        app_test2 {
+            applicationId "org.cltn.yfrm.userapp.app_test2"
+            externalNativeBuild {
+                cmake {
+                    targets "test-imgui-so"
+                }
+            }
+            sourceSets {
+                main {
+                    java {
+                        srcDirs "../../Android.srcs/test2/java"
+                    }
+                    manifest {
+                        srcFile "../../Android.srcs/test2/AndroidManifest.xml"
+                    }
+                }
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    externalNativeBuild {
+        cmake {
+            path file('../../CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.google.android.material:material:1.9.0'
+}

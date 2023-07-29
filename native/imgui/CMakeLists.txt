@@ -18,9 +18,15 @@ add_library(test-imgui OBJECT
 target_link_libraries(test-imgui
     PUBLIC yfrm cwgl)
 
-add_executable(test-imgui-win32 WIN32
-    dummy.cpp)
-
+if(ANDROID)
+    set(apptgt test-imgui-so)
+    add_library(${apptgt} SHARED
+        dummy.cpp)
+else()
+    set(apptgt test-imgui-win32)
+    add_executable(${apptgt} WIN32
+        dummy.cpp)
+endif()
 
 set(backendlibs)
 if(YFRM_CWGL_USE_DX11)
@@ -72,7 +78,7 @@ if(APPLE)
 endif()
 
 # FIXME: Why do we need yfrm cwgl here?
-target_link_libraries(test-imgui-win32 PRIVATE 
+target_link_libraries(${apptgt} PRIVATE 
     ${backendlibs}
     test-imgui yfrm yfrm_main cwgl)
 
