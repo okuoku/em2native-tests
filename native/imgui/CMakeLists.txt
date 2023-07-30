@@ -57,16 +57,22 @@ if(YFRM_CWGL_EXPERIMENTAL_TRACKER)
         spirv-cross-c
         )
 endif()
+
 if(YFRM_CWGL_USE_PLATFORMGLES)
-    # FIXME: Use IMPORT library instead...
-    if(WIN32)
-        set(libprefix lib)
+    if(APPLE)
+        list(APPEND backendlibs
+            "-framework OpenGLES")
     else()
-        set(libprefix)
+        # FIXME: Use IMPORT library instead...
+        if(WIN32)
+            set(libprefix lib)
+        else()
+            set(libprefix)
+        endif()
+        list(APPEND backendlibs
+            ${libprefix}EGL
+            ${libprefix}GLESv2)
     endif()
-    list(APPEND backendlibs
-        ${libprefix}EGL
-        ${libprefix}GLESv2)
 endif()
 
 if(APPLE)
@@ -77,8 +83,14 @@ if(APPLE)
             set(prefix ios)
         elseif("${CMAKE_SYSTEM_NAME}" STREQUAL tvOS)
             set(prefix tvos)
+        else()
+            set(prefix macos)
         endif()
-        set(platform arm64_x86_64-simulator)
+        if(${prefix} STREQUAL macos)
+            set(platform arm64_x86_64)
+        else()
+            set(platform arm64_x86_64-simulator)
+        endif()
         list(APPEND backendlibs
             ${YFRM_VULKANSDK_PREFIX}/MoltenVK/MoltenVK.xcframework/${prefix}-${platform}/libMoltenVK.a)
     endif()
