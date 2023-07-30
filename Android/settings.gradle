@@ -13,4 +13,6 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Yuniframe"
-include ':app'
+include ':appGLES'
+include ':appANGLEVulkan'
+include ':appCWGLVulkan'
