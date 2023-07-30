@@ -29,8 +29,7 @@ set(apple_mobile_variants
     ${apple_variants}
     SDL2-PlatformGLES)
 
-function(build platform abi slot)
-    set(nam ${platform}${abi}@${slot})
+function(build nam platform abi slot)
     foreach(cfg ${buildtypes})
         execute_process(COMMAND
             ${CMAKE_COMMAND} --build ${buildroot}/${nam}
@@ -43,13 +42,11 @@ function(build platform abi slot)
     endforeach()
 endfunction()
 
-function(genninja platform abi slot)
+function(genninja nam platform abi slot)
     set(sysroot)
     set(system_name)
     set(architectures)
     set(toolchain_file)
-
-    set(nam ${platform}${abi}@${slot})
 
     if(${platform} STREQUAL iOSsim)
         set(architectures "-DCMAKE_OSX_ARCHITECTURES=${abi}")
@@ -138,11 +135,17 @@ foreach(v ${variants})
         set(platform ${CMAKE_MATCH_1})
         set(abi ${CMAKE_MATCH_2})
         set(slot ${CMAKE_MATCH_3})
+        set(nam ${platform}${abi}@${slot})
 
         if(PHASE STREQUAL generate)
-            genninja(${platform} ${abi} ${slot})
+            genninja(${nam} ${platform} ${abi} ${slot})
         elseif(PHASE STREQUAL build)
-            build(${platform} ${abi} ${slot})
+            build(${nam} ${platform} ${abi} ${slot})
+        elseif(PHASE STREQUAL cycle)
+            if(NOT EXISTS ${buildroot}/${nam}/build.ninja)
+                genninja(${nam} ${platform} ${abi} ${slot})
+            endif()
+            build(${nam} ${platform} ${abi} ${slot})
         else()
             message(FATAL_ERROR "Unknown command: ${PHASE}")
         endif()
