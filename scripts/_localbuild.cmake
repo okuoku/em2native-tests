@@ -182,7 +182,7 @@ foreach(v ${variants})
         set(nam ${platform}${abi}@${slot})
 
         if(PHASE STREQUAL generate)
-            genninja(${nam} ${platform} ${abi} ${slot})
+            genninja(${nam} ${proj} ${platform} ${abi} ${slot})
         elseif(PHASE STREQUAL build)
             build(${nam})
         elseif(PHASE STREQUAL cycle)
