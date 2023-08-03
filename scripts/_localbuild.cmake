@@ -48,6 +48,13 @@ function(genninja nam platform abi slot)
     set(architectures)
     set(toolchain_file)
 
+    # FIXME: Move this to local configuration
+    if(EXISTS /Volumes/devel/VulkanSDK/1.3.250.1)
+        set(vulkansdk "-DYFRM_VULKANSDK_PREFIX=/Volumes/devel/VulkanSDK/1.3.250.1")
+    else()
+        set(vulkansdk)
+    endif()
+
     if(${platform} STREQUAL iOSsim)
         set(architectures "-DCMAKE_OSX_ARCHITECTURES=${abi}")
         set(sysroot "-DCMAKE_OSX_SYSROOT=${xcode_prefix}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk")
@@ -81,6 +88,7 @@ function(genninja nam platform abi slot)
         "-DCMAKE_CONFIGURATION_TYPES=${buildtypes}"
         -DCMAKE_DEFAULT_BUILD_TYPE=Debug
         -DCMAKE_INSTALL_PREFIX=${buildroot}/install/${nam}
+        ${vulkansdk}
         ${sysroot}
         ${system_name}
         ${architectures}
