@@ -60,10 +60,6 @@ set(CWGL_KHRONOS_HEADER_DIR
 set(YFRM_CWGL_PREFIX
     ${CMAKE_CURRENT_LIST_DIR}/integ/cwgl)
 
-# Set binary root directory that contain pointer files(*.txt)
-#     yfrm_lib_*.txt for libraries
-set(YFRM_BINARY_ROOT ${CMAKE_CURRENT_BINARY_DIR})
-
 # External libs(proj)
 include(${CMAKE_CURRENT_LIST_DIR}/integ/proj/projwrap.cmake)
 

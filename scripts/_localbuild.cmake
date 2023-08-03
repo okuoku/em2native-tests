@@ -11,25 +11,36 @@ endif()
 set(buildtypes Debug RelWithDebInfo)
 
 set(android_variants
-    SDL2-PlatformGLES
-    SDL2-CWGL-Vulkan
-    SDL2-ANGLE-Vulkan)
+    dep:ANGLE-Vulkan
+    dep:SDL2
+    dep:GLSLang
+    core:SDL2-PlatformGLES
+    core:SDL2-CWGL-Vulkan
+    core:SDL2-ANGLE-Vulkan)
 
 set(win_variants
-    SDL2-PlatformGLES
-    SDL2-ANGLE-DirectX11
-    SDL2-ANGLE-Vulkan
-    SDL2-CWGL-Vulkan)
+    dep:ANGLE-DirectX11
+    dep:ANGLE-Vulkan
+    dep:SDL2
+    dep:GLSLang
+    core:SDL2-PlatformGLES
+    core:SDL2-ANGLE-DirectX11
+    core:SDL2-ANGLE-Vulkan
+    core:SDL2-CWGL-Vulkan)
 
 set(apple_variants
-    SDL2-ANGLE-Metal
-    SDL2-CWGL-Vulkan)
+    # dep:ANGLE-Vulkan
+    dep:ANGLE-Metal
+    dep:SDL2
+    dep:GLSLang
+    core:SDL2-ANGLE-Metal
+    core:SDL2-CWGL-Vulkan)
 
 set(apple_mobile_variants
     ${apple_variants}
-    SDL2-PlatformGLES)
+    core:SDL2-PlatformGLES)
 
-function(build nam platform abi slot)
+function(build nam)
     foreach(cfg ${buildtypes})
         execute_process(COMMAND
             ${CMAKE_COMMAND} --build ${buildroot}/${nam}
@@ -42,11 +53,22 @@ function(build nam platform abi slot)
     endforeach()
 endfunction()
 
-function(genninja nam platform abi slot)
+function(genninja nam proj platform abi slot)
     set(sysroot)
     set(system_name)
     set(architectures)
     set(toolchain_file)
+    set(buildtarget)
+
+    if(${proj} STREQUAL core)
+        set(cmakeroot ${root})
+        set(buildtarget "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
+    elseif(${proj} STREQUAL dep)
+        set(cmakeroot ${root}/deps)
+        set(buildtarget "-DTGT=${slot}")
+    endif()
+
+    set(binaryroot "-DYFRM_BINARY_ROOT=${buildroot}/${platform}@${abi}")
 
     # FIXME: Move this to local configuration
     if(EXISTS /Volumes/devel/VulkanSDK/1.3.250.1)
@@ -83,7 +105,7 @@ function(genninja nam platform abi slot)
 
     execute_process(COMMAND
         ${CMAKE_COMMAND} -G "Ninja Multi-Config"
-        -S ${root}
+        -S ${cmakeroot}
         -B ${buildroot}/${nam}
         "-DCMAKE_CONFIGURATION_TYPES=${buildtypes}"
         -DCMAKE_DEFAULT_BUILD_TYPE=Debug
@@ -93,7 +115,8 @@ function(genninja nam platform abi slot)
         ${system_name}
         ${architectures}
         ${toolchain_file}
-        -DTESTSLOT=${slot}
+        ${buildtarget}
+        ${binaryroot}
         RESULT_VARIABLE rr
         )
     if(rr)
@@ -131,6 +154,7 @@ if(has_android_sdk)
         endforeach()
     endforeach()
 endif()
+
 if(WIN32)
     foreach(v ${win_variants})
         list(APPEND variants Windows:MSVCx64:${v})
@@ -145,24 +169,27 @@ elseif(APPLE)
         endforeach()
     endforeach()
 else()
+    # FIXME: Implement Generic variants here.
 endif()
 
 foreach(v ${variants})
-    if(${v} MATCHES "([^:]*):([^:]*):(.*)")
+    if(${v} MATCHES "([^:]*):([^:]*):([^:]*):(.*)")
         set(platform ${CMAKE_MATCH_1})
         set(abi ${CMAKE_MATCH_2})
-        set(slot ${CMAKE_MATCH_3})
+        set(proj ${CMAKE_MATCH_3})
+        set(slot ${CMAKE_MATCH_4})
+
         set(nam ${platform}${abi}@${slot})
 
         if(PHASE STREQUAL generate)
             genninja(${nam} ${platform} ${abi} ${slot})
         elseif(PHASE STREQUAL build)
-            build(${nam} ${platform} ${abi} ${slot})
+            build(${nam})
         elseif(PHASE STREQUAL cycle)
             if(NOT EXISTS ${buildroot}/${nam}/build.ninja)
-                genninja(${nam} ${platform} ${abi} ${slot})
+                genninja(${nam} ${proj} ${platform} ${abi} ${slot})
             endif()
-            build(${nam} ${platform} ${abi} ${slot})
+            build(${nam})
         else()
             message(FATAL_ERROR "Unknown command: ${PHASE}")
         endif()
