@@ -36,6 +36,16 @@ set(apple_variants
     core:SDL2-ANGLE-Metal
     core:SDL2-CWGL-Vulkan)
 
+set(posix_variants
+    # Assume Mesa and it provides both GLES and Vulkan
+    #dep:ANGLE-Vulkan ## FIXME: Needs patch..?
+    dep:SDL2
+    dep:GLSLang
+    core:SDL2-PlatformGLES
+    core:SDL2-CWGL-Vulkan
+    #core:SDL2-ANGLE-Vulkan
+    )
+
 set(apple_mobile_variants
     # dep:ANGLE-Vulkan
     # dep:ANGLE-Metal
@@ -174,8 +184,13 @@ elseif(APPLE)
             list(APPEND variants ${m}:${v})
         endforeach()
     endforeach()
+elseif(UNIX)
+    foreach(v ${posix_variants})
+        list(APPEND variants Posix:Native:${v})
+    endforeach()
 else()
     # FIXME: Implement Generic variants here.
+    message(FATAL_ERROR "Couldn't determine variants")
 endif()
 
 foreach(v ${variants})
