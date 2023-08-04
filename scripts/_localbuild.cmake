@@ -37,11 +37,17 @@ set(apple_variants
     core:SDL2-CWGL-Vulkan)
 
 set(apple_mobile_variants
-    ${apple_variants}
+    # dep:ANGLE-Vulkan
+    # dep:ANGLE-Metal
+    dep:SDL2
+    dep:GLSLang
+    # core:SDL2-ANGLE-Metal
+    core:SDL2-CWGL-Vulkan
     core:SDL2-PlatformGLES)
 
 function(build nam)
     foreach(cfg ${buildtypes})
+        message(STATUS "Entering ${nam} (${cfg})")
         execute_process(COMMAND
             ${CMAKE_COMMAND} --build ${buildroot}/${nam}
             --config ${cfg}
