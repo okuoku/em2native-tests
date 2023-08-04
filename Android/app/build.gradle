@@ -5,19 +5,23 @@ plugins {
 android {
     namespace 'org.cltn.yfrm'
     compileSdk 33
+    externalNativeBuild {
+        cmake {
+            path file('../../CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
 
     defaultConfig {
-        applicationId "org.cltn.yfrm"
+        applicationId "org.cltn.yfrm.userapp"
         minSdk 24
         targetSdk 33
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
-                arguments "-DTESTSLOT=SDL2-CWGL-Vulkan"
-                cppFlags ''
+                arguments "-DYFRM_WITH_PREBUILT_LIBS=1", "-DYFRM_BINARY_ROOT_GUESS=guess_android"
             }
         }
 
@@ -34,10 +38,30 @@ android {
             }
         }
     }
-    flavorDimensions "default"
+
+    flavorDimensions "containerapp", "backend"
     productFlavors {
+        CWGLVulkan_ {
+            dimension "backend"
+            applicationIdSuffix ".cwglvulkan"
+            externalNativeBuild {
+                cmake {
+                    arguments "-DTESTSLOT=SDL2-CWGL-Vulkan"
+                }
+            }
+        }
+        PlatformGLES_ {
+            dimension "backend"
+            applicationIdSuffix ".gles"
+            externalNativeBuild {
+                cmake {
+                    arguments "-DTESTSLOT=SDL2-PlatformGLES"
+                }
+            }
+        }
         app_test1 {
-            applicationId "org.cltn.yfrm.userapp.app_test1"
+            dimension "containerapp"
+            applicationIdSuffix ".app_test1"
             externalNativeBuild {
                 cmake {
                     targets "test-imgui-so"
@@ -55,7 +79,8 @@ android {
             }
         }
         app_test2 {
-            applicationId "org.cltn.yfrm.userapp.app_test2"
+            dimension "containerapp"
+            applicationIdSuffix ".app_test2"
             externalNativeBuild {
                 cmake {
                     targets "test-imgui-so"
@@ -76,17 +101,16 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            debuggable true
+        }
+        debug {
+            minifyEnabled false
+            debuggable true
         }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
-    }
-    externalNativeBuild {
-        cmake {
-            path file('../../CMakeLists.txt')
-            version '3.22.1'
-        }
     }
 }
 
