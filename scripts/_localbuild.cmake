@@ -119,6 +119,7 @@ function(genninja nam proj platform abi slot)
         # Native Windows, Mac, ...
     endif()
 
+    message(STATUS "Configure ${nam} (${abi}, sysroot ${sysroot})")
     execute_process(COMMAND
         ${CMAKE_COMMAND} -G "Ninja Multi-Config"
         -S ${cmakeroot}
@@ -147,7 +148,7 @@ if(DEFINED ENV{ANDROID_HOME})
     message(STATUS "android home = ${android_home}")
 endif()
 
-if(PHASE STREQUAL generate)
+if(NOT PHASE STREQUAL build)
     if(APPLE)
         # Detect Xcode prefix
         execute_process(COMMAND xcode-select -p
