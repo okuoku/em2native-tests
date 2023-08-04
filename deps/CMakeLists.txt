@@ -9,6 +9,7 @@ endif()
 
 set(YFRM_SUBPROJECT_BUILD ON)
 
+# Merge with main buildfile..?
 if(TGT STREQUAL "ANGLE-Vulkan")
     set(YFRM_CWGL_USE_ANGLE ON)
     set(YFRM_CWGL_USE_VULKAN ON)
@@ -25,6 +26,8 @@ elseif(TGT STREQUAL "SDL2")
     add_subdirectory(../integ/proj/sdl2 sdl2)
 elseif(TGT STREQUAL "GLSLang")
     add_subdirectory(../integ/proj/glslang glslang)
+elseif(TGT STREQUAL "UV")
+    add_subdirectory(../proj/uv uv)
 else()
     message(FATAL_ERROR "Unknown component: ${TGT}")
 endif()

@@ -14,6 +14,7 @@ set(android_variants
     dep:ANGLE-Vulkan
     dep:SDL2
     dep:GLSLang
+    dep:UV
     core:SDL2-PlatformGLES
     core:SDL2-CWGL-Vulkan
     core:SDL2-ANGLE-Vulkan)
@@ -23,6 +24,7 @@ set(win_variants
     dep:ANGLE-Vulkan
     dep:SDL2
     dep:GLSLang
+    dep:UV
     core:SDL2-PlatformGLES
     core:SDL2-ANGLE-DirectX11
     core:SDL2-ANGLE-Vulkan
@@ -33,6 +35,7 @@ set(apple_variants
     dep:ANGLE-Metal
     dep:SDL2
     dep:GLSLang
+    dep:UV
     core:SDL2-ANGLE-Metal
     core:SDL2-CWGL-Vulkan)
 
@@ -41,6 +44,7 @@ set(posix_variants
     #dep:ANGLE-Vulkan ## FIXME: Needs patch..?
     dep:SDL2
     dep:GLSLang
+    dep:UV
     core:SDL2-PlatformGLES
     core:SDL2-CWGL-Vulkan
     #core:SDL2-ANGLE-Vulkan
@@ -51,6 +55,7 @@ set(apple_mobile_variants
     # dep:ANGLE-Metal
     dep:SDL2
     dep:GLSLang
+    dep:UV
     # core:SDL2-ANGLE-Metal
     core:SDL2-CWGL-Vulkan
     core:SDL2-PlatformGLES)

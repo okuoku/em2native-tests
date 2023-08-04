@@ -78,6 +78,7 @@ if(YFRM_CWGL_USE_ANGLE)
     add_subdirectory(integ/proj/angle angle) # Angle (sometimes) depends glslang
 endif()
 add_subdirectory(integ/proj/sdl2 sdl2)
+add_subdirectory(proj/uv uv)
 
 # Libs
 set(NCCC_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/nccc)
