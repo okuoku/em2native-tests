@@ -7,3 +7,6 @@
 [submodule "ribbon-integ"]
 	path = ribbon-integ
 	url = https://github.com/okuoku/ribbon-integ
+[submodule "ext/platform/libuv"]
+	path = ext/platform/libuv
+	url = https://github.com/libuv/libuv
