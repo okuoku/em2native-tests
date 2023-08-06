@@ -10,3 +10,6 @@
 [submodule "ext/platform/libuv"]
 	path = ext/platform/libuv
 	url = https://github.com/libuv/libuv
+[submodule "ext/platform/whereami"]
+	path = ext/platform/whereami
+	url = https://github.com/gpakosz/whereami
