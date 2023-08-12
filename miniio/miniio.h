@@ -11,16 +11,18 @@ typedef void (*miniio_wakeup_routine)(void* ctx, void* wakeup_ctx);
 int miniio_ioctx_create(miniio_wakeup_routine wakeup, void* wakeup_ctx,
                         void** out_ctx);
 int miniio_ioctx_process(void* ctx);
-void miniio_ioctx_lock(void* ctx);
-void miniio_ioctx_unlock(void* ctx);
 void miniio_ioctx_terminate(void* ctx);
 
 
 /* Context, Eventqueue */
-int miniio_get_events(void* ctx, uint64_t* buf, int bufcount);
+int miniio_get_events(void* ctx, uintptr_t* buf, uint32_t bufcount,
+                      uint32_t* out_written, uint32_t* out_current);
 
-/* Sleep */
-int miniio_timeout(void* ctx, uint32_t ms);
+/* Timer */
+void* miniio_timer_create(void* ctx, void* userdata);
+void miniio_timer_destroy(void* ctx, void* handle);
+int miniio_timer_start(void* ctx, void* handle, uint64_t timeout, 
+                       uint64_t interval);
 
 /* TCP(Network stream) */
 void* miniio_net_param_create(void* ctx, void* userdata);
@@ -52,7 +54,7 @@ void* miniio_buffer_lock(void* ctx, void* handle);
 void miniio_buffer_unlock(void* ctx, void* handle);
 int miniio_write(void* ctx, void* stream, void* buffer, uintptr_t offset, 
                  uintptr_t len);
-int miniio_read(void* ctx, void* stream);
+int miniio_start_read(void* ctx, void* stream);
 
 /* { */
 #ifdef __cplusplus

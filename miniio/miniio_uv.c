@@ -1,41 +1,84 @@
-
 #include <stdlib.h>
+#include <string.h>
 #include <uv.h>
 #include "miniio.h"
 
 /* Context */
 struct miniio_uv_event_s {
-    struct miniio_uv_event_s* prev; /* (C + E) */
-    struct miniio_uv_event_s* next; /* (C + E) */
+    struct miniio_uv_event_s* prev;
+    struct miniio_uv_event_s* next;
+    uintptr_t* event;
+    size_t eventlen;
 };
-
-static void
-freeevent(struct miniio_uv_event_s* ev){
-    if(ev->prev){
-        ev->prev->next = ev->next;
-    }
-    if(ev->next){
-        ev->next->prev = ev->prev;
-    }
-    free(ev);
-}
 
 struct miniio_uv_ctx_s {
     uv_loop_t loop;
-    /* C: Context lock */
-    uv_mutex_t mtx_ctx;
-
     /* Wakeup handler */
     miniio_wakeup_routine wakeup;
     void* wakeup_ctx;
 
     /* Termination flag */
-    int terminating; /* (C) */
+    int terminating;
 
     /* Event chain */
-    struct miniio_uv_event* first; /* (C) */
-    struct miniio_uv_event* last; /* (C) */
+    struct miniio_uv_event_s* first;
+    struct miniio_uv_event_s* last;
+    size_t total_queued_event_len;
 };
+
+
+static void
+addevent(struct miniio_uv_ctx_s* ctx, uintptr_t* event){
+    /* Add to `last */
+    struct miniio_uv_event_s* ev;
+    uintptr_t* msg;
+    uintptr_t len;
+    len = msg[0];
+    ev = malloc(sizeof(struct miniio_uv_event_s));
+    if(! ev){
+        abort();
+    }
+    msg = malloc(sizeof(uintptr_t) * len);
+    if(! msg){
+        abort();
+    }
+    memcpy(msg, event, sizeof(uintptr_t) * len);
+    ev->event = msg;
+    ev->eventlen = len;
+    ev->prev = ctx->last;
+    ev->next = 0;
+    ctx->total_queued_event_len += len;
+    ctx->last = ev;
+    if(! ctx->first){
+        ctx->first = ev;
+    }
+}
+
+static void
+delevent(struct miniio_uv_ctx_s* ctx){
+    struct miniio_uv_event_s* ev;
+    /* Remove from `first` */
+    if(ctx->first){
+        ev = ctx->first;
+        ctx->first = ev->next;
+        if(ctx->last == ev){
+            ctx->last = 0;
+        }
+        if(ev->prev){
+            abort();
+        }
+        if(ev->next){
+            ev->next->prev = 0;
+        }
+        ctx->total_queued_event_len -= ev->eventlen;
+        free(ev->event);
+        free(ev);
+    }else{
+        abort();
+    }
+}
+
+
 
 /* I/O Context (No NCCC export) */
 int 
@@ -51,24 +94,16 @@ miniio_ioctx_create(miniio_wakeup_routine wakeup, void* wakeup_ctx,
     if(r){
         goto fail1;
     }
-    r = uv_mutex_init(&ctx->mtx_ctx);
-    if(r){
-        goto fail2;
-    }
 
     ctx->wakeup = wakeup;
     ctx->wakeup_ctx = wakeup_ctx;
     ctx->terminating = 0;
     ctx->first = ctx->last = 0;
+    ctx->total_queued_event_len = 0;
 
     *out_ctx = ctx;
     return 0;
 
-fail2:
-    r = uv_loop_close(&ctx->loop);
-    if(r){
-        abort(); /* Should never happen */
-    }
 fail1:
     free(ctx);
 fail0:
@@ -79,7 +114,7 @@ int
 miniio_ioctx_process(void* pctx){
     int r;
     struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
-    r = uv_run(ctx->loop, UV_RUN_DEFAULT);
+    r = uv_run(&ctx->loop, UV_RUN_DEFAULT);
     if(r){
         /* We still have some active handles */
         return 1;
@@ -88,49 +123,125 @@ miniio_ioctx_process(void* pctx){
 }
 
 void 
-miniio_ioctx_lock(void* pctx){
-    struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
-    uv_mutex_lock(&ctx->mtx_ctx);
-}
-
-void 
-miniio_ioctx_unlock(void* pctx){
-    struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
-    uv_mutex_unlock(&ctx->mtx_ctx);
-}
-
-void 
 miniio_ioctx_terminate(void* pctx){
     int r;
     struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
     struct miniio_uv_event_s* ev;
-    uv_mutex_lock(&ctx->mtx_ctx);
     ctx->terminating = 1;
-    uv_mutex_unlock(&ctx->mtx_ctx);
 
     r = uv_loop_close(&ctx->loop);
     if(r){
         /* FIXME: Wait for in-flight callbacks exit */
         abort();
     }
-    uv_mutex_lock(&ctx->mtx_ctx);
     /* So we made sure noone will enqueue/dequeue events now */
     while(ctx->first){
-        ev = ctx->first->next;
-        freeevent(ctx->first);
-        ctx->first = ev;
+        delevent(ctx);
     }
-    uv_mutex_unlock(&ctx->mtx_ctx);
-    uv_mutex_destroy(&ctx->mtx_ctx);
     free(ctx);
 }
 
 
 /* Context, Eventqueue */
-int miniio_get_events(void* ctx, uint64_t* buf, int bufcount);
+int 
+miniio_get_events(void* pctx, uintptr_t* buf, uint32_t bufcount, 
+                  uint32_t* out_written,
+                  uint32_t* out_current){
+    struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
+    uint32_t cur = 0;
+    uint32_t res;
+    uintptr_t len;
+    while(ctx->first){
+        len = ctx->first->event[0];
+        if(cur + len > bufcount){
+            break;
+        }
+        memcpy(&buf[cur], ctx->first->event, sizeof(uintptr_t)*len);
+        cur += len;
+        delevent(ctx);
+    }
+    *out_written = cur;
+    *out_current = ctx->total_queued_event_len;
+    return 0;
+}
 
-/* Sleep */
-int miniio_timeout(void* ctx, uint32_t ms);
+/* Timer */
+struct miniio_uv_timer_s { /* for libuv userdata */
+    struct miniio_uv_ctx_s* ctx;
+    void* userdata;
+    uv_timer_t timer;
+};
+
+void* 
+miniio_timer_create(void* pctx, void* userdata){
+    struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
+    struct miniio_uv_timer_s* h;
+    int r;
+    h = malloc(sizeof(struct miniio_uv_timer_s));
+    if(! h){
+        return 0;
+    }
+    r = uv_timer_init(&ctx->loop, &h->timer);
+    if(r){
+        free(h);
+        return 0;
+    }
+    h->timer.data = h;
+    h->userdata = userdata;
+    h->ctx = ctx;
+    return h;
+}
+
+static void
+cb_timer_close(uv_handle_t* uhandle){
+    struct miniio_uv_timer_s* h = (struct miniio_uv_timer_s*)uhandle->data;
+    uintptr_t ev[4];
+    /* [4 0(handle-close) handle userdata] */
+    ev[0] = 4;
+    ev[1] = 0;
+    ev[2] = (uintptr_t)h;
+    ev[3] = (uintptr_t)h->userdata;
+    addevent(h->ctx, ev);
+
+    free(h);
+}
+
+void 
+miniio_timer_destroy(void* pctx, void* phandle){
+    int r;
+    struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
+    struct miniio_uv_timer_s* h = (struct miniio_uv_timer_s*)phandle;
+
+    uv_close((uv_handle_t*)&h->timer, cb_timer_close);
+}
+
+static void 
+cb_timer_event(uv_timer_t* uhandle){
+    struct miniio_uv_timer_s* h = (struct miniio_uv_timer_s*)uhandle->data;
+    struct miniio_uv_ctx_s* ctx = h->ctx;
+    uintptr_t ev[4];
+
+    /* [4 1(timer) handle userdata] */
+    ev[0] = 4;
+    ev[1] = 1;
+    ev[2] = (uintptr_t)h;
+    ev[3] = (uintptr_t)h->userdata;
+    addevent(ctx, ev);
+}
+
+int 
+miniio_timer_start(void* pctx, void* phandle, uint64_t timeout,
+                       uint64_t interval){
+    int r;
+    struct miniio_uv_timer_s* h = (struct miniio_uv_timer_s*)phandle;
+
+    /* Request timeout */
+    r = uv_timer_start(&h->timer, cb_timer_event, timeout, interval);
+    if(r){
+        return r;
+    }
+    return 0;
+}
 
 /* TCP(Network stream) */
 void* miniio_net_param_create(void* ctx, void* userdata);
@@ -162,6 +273,6 @@ void* miniio_buffer_lock(void* ctx, void* handle);
 void miniio_buffer_unlock(void* ctx, void* handle);
 int miniio_write(void* ctx, void* stream, void* buffer, uintptr_t offset,
                  uintptr_t len);
-int miniio_read(void* ctx, void* stream);
+int miniio_start_read(void* ctx, void* stream);
 
 
