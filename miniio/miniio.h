@@ -6,6 +6,8 @@ extern "C" {
 #endif
 /* } */
 
+#include <stdint.h>
+
 /* I/O Context (No NCCC export) */
 typedef void (*miniio_wakeup_routine)(void* ctx, void* wakeup_ctx);
 int miniio_ioctx_create(miniio_wakeup_routine wakeup, void* wakeup_ctx,
