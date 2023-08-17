@@ -1,6 +1,12 @@
 nccc_stub_begin(miniio)
 
 # Context
+nccc_api(miniio_ioctx_create
+    IN OUT ptr)
+nccc_api(miniio_ioctx_process
+    IN ptr OUT s32)
+nccc_api(miniio_ioctx_destroy
+    IN ptr OUT)
 nccc_api(miniio_get_events
     IN ptr ptr u32 ptr ptr OUT s32)
 

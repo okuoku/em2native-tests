@@ -13,9 +13,6 @@ struct miniio_uv_event_s {
 
 struct miniio_uv_ctx_s {
     uv_loop_t loop;
-    /* Wakeup handler */
-    miniio_wakeup_routine wakeup;
-    void* wakeup_ctx;
 
     /* Termination flag */
     int terminating;
@@ -81,9 +78,8 @@ delevent(struct miniio_uv_ctx_s* ctx){
 
 
 /* I/O Context (No NCCC export) */
-int 
-miniio_ioctx_create(miniio_wakeup_routine wakeup, void* wakeup_ctx, 
-                    void** out_ctx){
+void*
+miniio_ioctx_create(void){
     int r;
     struct miniio_uv_ctx_s* ctx;
     ctx = malloc(sizeof(struct miniio_uv_ctx_s));
@@ -95,35 +91,33 @@ miniio_ioctx_create(miniio_wakeup_routine wakeup, void* wakeup_ctx,
         goto fail1;
     }
 
-    ctx->wakeup = wakeup;
-    ctx->wakeup_ctx = wakeup_ctx;
     ctx->terminating = 0;
     ctx->first = ctx->last = 0;
     ctx->total_queued_event_len = 0;
 
-    *out_ctx = ctx;
-    return 0;
+    return ctx;
 
 fail1:
     free(ctx);
 fail0:
-    return 1;
+    return 0;
 }
 
 int 
 miniio_ioctx_process(void* pctx){
     int r;
     struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
-    r = uv_run(&ctx->loop, UV_RUN_DEFAULT);
+    r = uv_run(&ctx->loop, UV_RUN_ONCE);
     if(r){
         /* We still have some active handles */
         return 1;
     }
+    /* No handles left */
     return 0;
 }
 
 void 
-miniio_ioctx_terminate(void* pctx){
+miniio_ioctx_destroy(void* pctx){
     int r;
     struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
     struct miniio_uv_event_s* ev;

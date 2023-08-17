@@ -8,13 +8,10 @@ extern "C" {
 
 #include <stdint.h>
 
-/* I/O Context (No NCCC export) */
-typedef void (*miniio_wakeup_routine)(void* ctx, void* wakeup_ctx);
-int miniio_ioctx_create(miniio_wakeup_routine wakeup, void* wakeup_ctx,
-                        void** out_ctx);
+/* I/O Context */
+void* miniio_ioctx_create(void);
 int miniio_ioctx_process(void* ctx);
-void miniio_ioctx_terminate(void* ctx);
-
+void miniio_ioctx_destroy(void* ctx);
 
 /* Context, Eventqueue */
 int miniio_get_events(void* ctx, uintptr_t* buf, uint32_t bufcount,
