@@ -28,8 +28,15 @@ void* miniio_net_param_create(void* ctx, void* userdata);
 void miniio_net_param_destroy(void* ctx, void* param);
 int miniio_net_param_hostname(void* ctx, void* param, const char* hostname);
 int miniio_net_param_port(void* ctx, void* param, int port);
-void* miniio_tcp_listen(void* ctx, void* param);
-void* miniio_tcp_connect(void* ctx, void* param);
+int miniio_net_param_name_resolve(void* ctx, void* param);
+int miniio_net_param_name_fetch(void* ctx, void* param, uint32_t idx, 
+                                uint32_t* ipversion,
+                                uint8_t** addr, uint32_t* addrlen);
+void* miniio_tcp_create(void* ctx, void* param, uint32_t idx, void* userdata);
+int miniio_tcp_listen(void* ctx, void* handle);
+int miniio_tcp_connect(void* ctx, void* handle, void* param, uint32_t idx);
+void* miniio_tcp_accept(void* ctx, void* handle, void* userdata);
+int miniio_tcp_shutdown(void* ctx, void* handle);
 
 /* Process */
 void* miniio_process_param_create(void* ctx, const char* execpath, 
@@ -49,11 +56,13 @@ void miniio_pipe_destroy(void* ctx, void* pipe);
 void miniio_close(void* ctx, void* stream);
 void* miniio_buffer_create(void* ctx, uintptr_t size, void* userdata);
 void miniio_buffer_destroy(void* ctx, void* handle);
-void* miniio_buffer_lock(void* ctx, void* handle);
+void* miniio_buffer_lock(void* ctx, void* handle, uintptr_t offset,
+                         uintptr_t len);
 void miniio_buffer_unlock(void* ctx, void* handle);
+void miniio_buffer_consume(void* ctx, void* handle, uintptr_t len);
 int miniio_write(void* ctx, void* stream, void* buffer, uintptr_t offset, 
                  uintptr_t len);
-int miniio_start_read(void* ctx, void* stream);
+int miniio_start_read(void* ctx, void* stream, void* buffer);
 
 /* { */
 #ifdef __cplusplus
