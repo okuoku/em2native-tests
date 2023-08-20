@@ -413,7 +413,6 @@ enum miniio_uv_objtype_e {
 struct miniio_uv_buffer_s;
 struct miniio_uv_obj_s {
     struct miniio_uv_ctx_s* ctx;
-    struct miniio_uv_buffer_s* readbuf;
     void* userdata;
     union {
         uv_tcp_t tcp;
@@ -464,7 +463,6 @@ miniio_tcp_create(void* pctx, void* param, uint32_t idx, void* userdata){
     }
 
     obj->ctx = ctx;
-    obj->readbuf = 0;
     obj->userdata = userdata;
     obj->objtype = OBJTYPE_TCP;
     obj->as.stream.data = obj;
@@ -647,8 +645,6 @@ struct miniio_uv_buffer_s {
     struct miniio_uv_ctx_s* ctx;
     uint8_t* buffer;
     uintptr_t buflen;
-    uintptr_t readptr;
-    uintptr_t writeptr;
     void* userdata;
     union {
         uv_req_t req;
@@ -656,26 +652,37 @@ struct miniio_uv_buffer_s {
     } req;
 };
 
-void* 
-miniio_buffer_create(void* ctx, uintptr_t size, void* userdata){
-    void* bufdata;
+static struct miniio_uv_buffer_s*
+newbuffer(void* ctx, void* buffer, uintptr_t buflen, void* userdata){
     struct miniio_uv_buffer_s* buf;
     buf = malloc(sizeof(struct miniio_uv_buffer_s));
     if(! buf){
         return 0;
     }
-    bufdata = malloc(size);
-    if(! bufdata){
-        free(buf);
-        return 0;
-    }
 
     buf->ctx = (struct miniio_uv_ctx_s*) ctx;
     buf->userdata = userdata;
-    buf->buflen = size;
-    buf->readptr = 0;
-    buf->writeptr = 0;
-    (void)uv_req_set_data(&buf->req.req, buf);
+    buf->buflen = buflen;
+    buf->req.req.data = buf;
+
+    return buf;
+}
+
+void* 
+miniio_buffer_create(void* ctx, uint32_t size, void* userdata){
+    void* bufdata;
+    struct miniio_uv_buffer_s* buf;
+
+    bufdata = malloc(size);
+    if(! bufdata){
+        return 0;
+    }
+
+    buf = newbuffer(ctx, bufdata, size, userdata);
+    if(! buf){
+        free(bufdata);
+        return 0;
+    }
     
     return buf;
 }
@@ -689,7 +696,7 @@ miniio_buffer_destroy(void* ctx, void* handle){
 }
 
 void* 
-miniio_buffer_lock(void* ctx, void* handle, uintptr_t offset, uintptr_t len){
+miniio_buffer_lock(void* ctx, void* handle, uint32_t offset, uint32_t len){
     (void)ctx;
     struct miniio_uv_buffer_s* buf = (struct miniio_uv_buffer_s*)handle;
 
@@ -702,36 +709,6 @@ miniio_buffer_unlock(void* ctx, void* handle){
     (void)ctx;
     (void)handle;
 }
-
-void
-miniio_buffer_consume(void* ctx, void* handle, uintptr_t len){
-    (void)ctx;
-    struct miniio_uv_buffer_s* buf = (struct miniio_uv_buffer_s*)handle;
-
-    uintptr_t newlen;
-
-    if(len == 0){
-        /* Do nothing */
-        return;
-    }
-
-    newlen = buf->readptr + len;
-    if(newlen > buf->buflen){
-        /* Should not happen */
-        abort();
-    }
-    if(buf->writeptr == newlen){
-        /* Buffer is empty */
-        buf->writeptr = 0;
-        buf->readptr = 0;
-    }else if(buf->buflen == newlen){
-        /* Rollover */
-        buf->readptr = 0;
-    }else{
-        buf->readptr = newlen;
-    }
-}
-
 
 static void
 cb_write(uv_write_t* req, int status){
@@ -751,8 +728,8 @@ cb_write(uv_write_t* req, int status){
 }
 
 int 
-miniio_write(void* ctx, void* stream, void* buffer, uintptr_t offset,
-                 uintptr_t len){
+miniio_write(void* ctx, void* stream, void* buffer, uint32_t offset,
+                 uint32_t len){
     int r;
     struct miniio_uv_obj_s* obj = (struct miniio_uv_obj_s*)stream;
     struct miniio_uv_buffer_s* buf = (struct miniio_uv_buffer_s*)buffer;
@@ -772,50 +749,24 @@ miniio_write(void* ctx, void* stream, void* buffer, uintptr_t offset,
 
 static void
 cb_alloc_read(uv_handle_t* handle, size_t suggested_size, uv_buf_t* out){
-    struct miniio_uv_obj_s* obj = (struct miniio_uv_obj_s*)handle->data;
-    struct miniio_uv_buffer_s* buf = obj->readbuf;
+    void* buf;
 
-    uintptr_t res;
-
-    if(suggested_size == 0){
-        /* Algorithm cannot handle zero allocation */
-        abort();
-    }
-
-    if(buf->writeptr == buf->buflen){
-        res = buf->buflen - buf->readptr;
-        res = res > suggested_size ? suggested_size : res;
-        *out = uv_buf_init(buf->buffer, res);
-        buf->writeptr = res;
-    }else if(buf->readptr < buf->writeptr){
-        res = buf->buflen - buf->writeptr;
-        res = res > suggested_size ? suggested_size : res;
-        *out = uv_buf_init(buf->buffer + buf->writeptr, res);
-        buf->writeptr += res;
-    }else if(buf->readptr > buf->writeptr){
-        res = buf->readptr - buf->writeptr;
-        res = res > suggested_size ? suggested_size : res;
-        *out = uv_buf_init(buf->buffer + buf->writeptr, res);
-        buf->writeptr += res;
-    }else if(buf->readptr == 0){
-        /* readptr == writeptr == 0 */
-        res = buf->buflen;
-        res = res > suggested_size ? suggested_size : res;
-        *out = uv_buf_init(buf->buffer, res);
-        buf->writeptr = res;
-    }else{
-        /* Buffer full */
+    buf = malloc(suggested_size);
+    if(! buf){
         *out = uv_buf_init(0, 0);
+    }else{
+        *out = uv_buf_init(buf, suggested_size);
     }
 }
 
 static void
 cb_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
-    uintptr_t ev[9];
+    uintptr_t ev[7];
     struct miniio_uv_obj_s* obj = (struct miniio_uv_obj_s*)stream->data;
     struct miniio_uv_ctx_s* ctx = obj->ctx;
+    struct miniio_uv_buffer_s* buffer;
     uint8_t* bufstart = buf->base;
-    uintptr_t buflen, buftop, bufend;
+    size_t buflen = buf->len;
 
     if(nread == UV_EOF){
         /* [4 7(read-eof) stm-handle stm-userdata] */
@@ -838,21 +789,19 @@ cb_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
         ev[3] = (uintptr_t)obj->userdata;
         ev[4] = (uintptr_t)nread;
     }else{
-        buflen = buf->len;
-        buftop = bufstart - obj->readbuf->buffer;
-        bufend = buftop + buf->len;
+        buffer = newbuffer(ctx, bufstart, buflen, 0);
+        if(! buffer){
+            abort(); /* TODO: Perhaps we should ballon this in alloc cb? */
+        }
 
-        /* [9 6(read-complete) stm-handle stm-userdata 
-         *  buf-handle buf-userdata start end n] */
-        ev[0] = 9;
+        /* [7 6(read-complete) stm-handle stm-userdata buf-handle start n] */
+        ev[0] = 7;
         ev[1] = 6;
         ev[2] = (uintptr_t)obj;
         ev[3] = (uintptr_t)obj->userdata;
-        ev[4] = (uintptr_t)obj->readbuf;
-        ev[5] = (uintptr_t)obj->readbuf->userdata;
-        ev[6] = buftop;
-        ev[7] = bufend;
-        ev[8] = nread;
+        ev[4] = (uintptr_t)buffer;
+        ev[5] = 0;
+        ev[6] = nread;
     }
 
     addevent(ctx, ev);
@@ -864,7 +813,6 @@ miniio_start_read(void* ctx, void* stream, void* buffer){
     struct miniio_uv_obj_s* obj = (struct miniio_uv_obj_s*)stream;
     struct miniio_uv_buffer_s* buf = (struct miniio_uv_buffer_s*)buffer;
 
-    obj->readbuf = buf;
     r = uv_read_start(&obj->as.stream, cb_alloc_read, cb_read);
 
     return r;

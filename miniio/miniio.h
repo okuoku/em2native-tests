@@ -54,14 +54,13 @@ void miniio_pipe_destroy(void* ctx, void* pipe);
 
 /* Stream I/O */
 void miniio_close(void* ctx, void* stream);
-void* miniio_buffer_create(void* ctx, uintptr_t size, void* userdata);
+void* miniio_buffer_create(void* ctx, uint32_t size, void* userdata);
 void miniio_buffer_destroy(void* ctx, void* handle);
-void* miniio_buffer_lock(void* ctx, void* handle, uintptr_t offset,
-                         uintptr_t len);
+void* miniio_buffer_lock(void* ctx, void* handle, uint32_t offset,
+                         uint32_t len);
 void miniio_buffer_unlock(void* ctx, void* handle);
-void miniio_buffer_consume(void* ctx, void* handle, uintptr_t len);
-int miniio_write(void* ctx, void* stream, void* buffer, uintptr_t offset, 
-                 uintptr_t len);
+int miniio_write(void* ctx, void* stream, void* buffer, uint32_t offset, 
+                 uint32_t len);
 int miniio_start_read(void* ctx, void* stream, void* buffer);
 
 /* { */
