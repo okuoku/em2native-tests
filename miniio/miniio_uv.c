@@ -190,9 +190,9 @@ static void
 cb_timer_close(uv_handle_t* uhandle){
     struct miniio_uv_timer_s* h = (struct miniio_uv_timer_s*)uhandle->data;
     uintptr_t ev[4];
-    /* [4 0(handle-close) handle userdata] */
+    /* [4 (handle-close) handle userdata] */
     ev[0] = 4;
-    ev[1] = 0;
+    ev[1] = MINIIO_EVT_HANDLE_CLOSE;
     ev[2] = (uintptr_t)h;
     ev[3] = (uintptr_t)h->userdata;
     addevent(h->ctx, ev);
@@ -215,9 +215,9 @@ cb_timer_event(uv_timer_t* uhandle){
     struct miniio_uv_ctx_s* ctx = h->ctx;
     uintptr_t ev[4];
 
-    /* [4 1(timer) handle userdata] */
+    /* [4 (timer) handle userdata] */
     ev[0] = 4;
-    ev[1] = 1;
+    ev[1] = MINIIO_EVT_TIMER;
     ev[2] = (uintptr_t)h;
     ev[3] = (uintptr_t)h->userdata;
     addevent(ctx, ev);
@@ -321,9 +321,9 @@ cb_getaddrinfo(uv_getaddrinfo_t* req, int status, struct addrinfo *res){
         np->has_addrinfo = 0;
     }
 
-    /* [5 2(netresolve) handle userdata result] */
+    /* [5 (netresolve) handle userdata result] */
     ev[0] = 5;
-    ev[1] = 2;
+    ev[1] = MINIIO_EVT_NETRESOLVE;
     ev[2] = (uintptr_t)np;
     ev[3] = (uintptr_t)np->userdata;
     ev[4] = status;
@@ -410,16 +410,17 @@ enum miniio_uv_objtype_e {
     OBJTYPE_PIPE,
 };
 
-struct miniio_uv_buffer_s;
 struct miniio_uv_obj_s {
     struct miniio_uv_ctx_s* ctx;
     void* userdata;
     union {
         uv_tcp_t tcp;
+        uv_pipe_t pipe;
         uv_stream_t stream;
         uv_handle_t handle;
     } as;
     union {
+        uv_file pipefds[2];
         uv_connect_t connect;
         uv_shutdown_t shutdown;
     }req;
@@ -477,9 +478,9 @@ cb_connection(uv_stream_t* server, int status){
     struct miniio_uv_obj_s* obj = (struct miniio_uv_obj_s*)server->data;
     struct miniio_uv_ctx_s* ctx = obj->ctx;
 
-    /* [5 3(incomming) handle userdata result] */
+    /* [5 (incomming) handle userdata result] */
     ev[0] = 5;
-    ev[1] = 3;
+    ev[1] = MINIIO_EVT_CONNECT_INCOMMING;
     ev[2] = (uintptr_t)obj;
     ev[3] = (uintptr_t)obj->userdata;
     ev[4] = status;
@@ -507,9 +508,9 @@ cb_connect(uv_connect_t* req, int status){
     uintptr_t ev[5];
     struct miniio_uv_obj_s* obj = (struct miniio_uv_obj_s*)req->data;
     struct miniio_uv_ctx_s* ctx = obj->ctx;
-    /* [5 4(outgoing) handle userdata result] */
+    /* [5 (outgoing) handle userdata result] */
     ev[0] = 5;
-    ev[1] = 4;
+    ev[1] = MINIIO_EVT_CONNECT_OUTGOING;
     ev[2] = (uintptr_t)obj;
     ev[3] = (uintptr_t)obj->userdata;
     ev[4] = status;
@@ -581,9 +582,9 @@ cb_shutdown(uv_shutdown_t* req, int status){
     uintptr_t ev[5];
     struct miniio_uv_obj_s* obj = (struct miniio_uv_obj_s*)req->data;
     struct miniio_uv_ctx_s* ctx = obj->ctx;
-    /* [5 5(shutdown) handle userdata result] */
+    /* [5 (shutdown) handle userdata result] */
     ev[0] = 5;
-    ev[1] = 5;
+    ev[1] = MINIIO_EVT_SHUTDOWN;
     ev[2] = (uintptr_t)obj;
     ev[3] = (uintptr_t)obj->userdata;
     ev[4] = status;
@@ -606,33 +607,294 @@ miniio_tcp_shutdown(void* pctx, void* handle){
 }
 
 /* Process */
-void* miniio_process_param_create(void* ctx, const char* execpath,
-                                  void* userdata);
-void miniio_process_param_destroy(void* ctx, void* param);
-int miniio_process_param_workdir(void* ctx, void* param, const char* dir);
-int miniio_process_param_args(void* ctx, void* argv, int argc);
-int miniio_process_param_stdin(void* ctx, void* pipe);
-int miniio_process_param_stdout(void* ctx, void* pipe);
-int miniio_process_param_stderr(void* ctx, void* pipe);
-void* miniio_process_spawn(void* ctx, void* param);
-int miniio_process_abort(void* ctx, void* handle);
-void* miniio_pipe_new(void* ctx, void* userdata);
-void miniio_pipe_destroy(void* ctx, void* pipe);
+struct miniio_uv_procparam_s {
+    void* userdata;
+    char* execpath;
+    char** argv;
+    char* workdir;
+    int argc;
+    struct miniio_uv_obj_s* std_in;
+    struct miniio_uv_obj_s* std_out;
+    struct miniio_uv_obj_s* std_err;
+};
+
+struct miniio_uv_proc_s {
+    struct miniio_uv_ctx_s* ctx;
+    void* userdata;
+    uv_process_t process;
+};
+
+void* 
+miniio_process_param_create(void* ctx, const char* execpath, void* userdata){
+    struct miniio_uv_procparam_s* param;
+    size_t namelen;
+
+    (void) ctx;
+
+    param = malloc(sizeof(struct miniio_uv_procparam_s));
+    if(! param){
+        return 0;
+    }
+    param->userdata = userdata;
+
+    namelen = strnlen(execpath, 16 * 1024);
+    param->execpath = malloc(namelen + 1);
+    if(! param->execpath){
+        free(param);
+        return 0;
+    }
+    memcpy(param->execpath, execpath, namelen + 1);
+
+    param->argv = 0;
+    param->argc = 0;
+    param->workdir = 0;
+    param->std_in = 0;
+    param->std_out = 0;
+    param->std_err = 0;
+
+    return param;
+}
+
+void 
+miniio_process_param_destroy(void* ctx, void* param){
+    int i;
+    struct miniio_uv_procparam_s* p = (struct miniio_uv_procparam_s*)param;
+    (void) ctx;
+
+    free(p->execpath);
+    if(p->argc){
+        for(i=0;i!=p->argc;i++){
+            free(p->argv[i]);
+        }
+        free(p->argv);
+    }
+    free(p->workdir);
+
+    free(p);
+}
+
+int 
+miniio_process_param_workdir(void* ctx, void* param, const char* dir){
+    struct miniio_uv_procparam_s* p = (struct miniio_uv_procparam_s*)param;
+    char* s;
+    size_t namelen;
+    namelen = strnlen(dir, 16 * 1024);
+    s = malloc(namelen + 1);
+    if(! s){
+        return 1;
+    }
+    memcpy(s, dir, namelen + 1);
+    free(p->workdir);
+    p->workdir = s;
+    return 0;
+}
+
+int 
+miniio_process_param_args(void* ctx, void* param, void* pargv, int argc){
+    struct miniio_uv_procparam_s* p = (struct miniio_uv_procparam_s*)param;
+    char** argv = (char**)pargv;
+    size_t namelen;
+    int i;
+    char** v;
+    char* s;
+    (void) ctx;
+    v = malloc(sizeof(char*) * argc);
+    if(! v){
+        return 1;
+    }
+    memset(v, 0, sizeof(char*) * argc);
+    for(i=0;i!=argc;i++){
+        namelen = strnlen(argv[i], 16 * 1024 * 1024);
+        s = malloc(namelen + 1);
+        if(! s){
+            goto fail;
+        }
+        memcpy(s, argv[i], namelen + 1);
+        v[i] = s;
+    }
+    for(i=0;i!=p->argc;i++){
+        free(p->argv[i]);
+    }
+    free(p->argv);
+
+    p->argc = argc;
+    p->argv = v;
+
+    return 0;
+
+fail:
+    for(i=0;i!=argc;i++){
+        free(v[i]);
+    }
+    return 1;
+}
+
+int 
+miniio_process_param_stdin(void* ctx, void* param, void* pipe){
+    struct miniio_uv_procparam_s* p = (struct miniio_uv_procparam_s*)param;
+    (void) ctx;
+
+    p->std_in = (struct miniio_uv_obj_s*)pipe;
+    return 0;
+}
+
+int 
+miniio_process_param_stdout(void* ctx, void* param, void* pipe){
+    struct miniio_uv_procparam_s* p = (struct miniio_uv_procparam_s*)param;
+    (void) ctx;
+
+    p->std_out = (struct miniio_uv_obj_s*)pipe;
+    return 0;
+}
+
+int 
+miniio_process_param_stderr(void* ctx, void* param, void* pipe){
+    struct miniio_uv_procparam_s* p = (struct miniio_uv_procparam_s*)param;
+    (void) ctx;
+
+    p->std_err = (struct miniio_uv_obj_s*)pipe;
+    return 0;
+}
+
+static void
+cb_exit(uv_process_t* proc, int64_t exit_status, int term_signal){
+    struct miniio_uv_proc_s* p = (struct miniio_uv_proc_s*)proc->data;
+    uintptr_t ev[6];
+
+    /* [6 (process-exit) handle userdata status signal] */
+    ev[0] = 6;
+    ev[1] = MINIIO_EVT_PROCESS_EXIT;
+    ev[2] = (uintptr_t)p;
+    ev[3] = (uintptr_t)p->userdata;
+    ev[4] = (uintptr_t)exit_status;
+    ev[5] = term_signal;
+
+    addevent(p->ctx, ev);
+}
+
+void* 
+miniio_process_spawn(void* pctx, void* param){
+    int i,r;
+    struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
+    struct miniio_uv_procparam_s* p = (struct miniio_uv_procparam_s*)param;
+    struct miniio_uv_proc_s* proc;
+    char** args;
+    uv_process_options_t opts;
+    uv_stdio_container_t stdio[3];
+
+    proc = malloc(sizeof(struct miniio_uv_proc_s));
+    if(! proc){
+        return 0;
+    }
+    /* Reserve one extra field for sentinel */
+    args = malloc(sizeof(char*) * p->argc + 2);
+    if(! args){
+        free(proc);
+        return 0;
+    }
+    memset(&opts, 0, sizeof(opts));
+
+    if(p->argc <= 1){
+        /* Only argument is execpath */
+        args[0] = p->execpath;
+        args[1] = 0;
+    }else{
+        for(i=0;i!=p->argc;i++){
+            if(i==0){
+                /* Override argv[0] since libuv require this */
+                args[i] = p->execpath;
+            }else{
+                args[i] = p->argv[i];
+            }
+        }
+        args[p->argc] = 0;
+    }
+
+    opts.exit_cb = cb_exit;
+    opts.file = p->execpath;
+    opts.args = args;
+    opts.env = 0;
+    opts.cwd = p->workdir;
+    opts.flags = 0;
+    opts.stdio_count = 3;
+    opts.stdio = stdio;
+    if(p->std_in){
+        stdio[0].flags = UV_CREATE_PIPE | UV_READABLE_PIPE;
+        stdio[0].data.stream = &p->std_in->as.stream;
+    }else{
+        stdio[0].flags = UV_IGNORE;
+    }
+    if(p->std_out){
+        stdio[1].flags = UV_CREATE_PIPE | UV_WRITABLE_PIPE;
+        stdio[1].data.stream = &p->std_out->as.stream;
+    }else{
+        stdio[1].flags = UV_IGNORE;
+    }
+    if(p->std_err){
+        stdio[2].flags = UV_CREATE_PIPE | UV_WRITABLE_PIPE;
+        stdio[2].data.stream = &p->std_err->as.stream;
+    }else{
+        stdio[2].flags = UV_IGNORE;
+    }
+
+    proc->process.data = proc;
+    r = uv_spawn(&ctx->loop, &proc->process, &opts);
+    if(r){
+        free(args);
+        free(proc);
+        return 0;
+    }
+    free(args);
+
+    return proc;
+}
+
+int 
+miniio_process_abort(void* ctx, void* handle){
+    return 1;
+}
+
+void
+miniio_process_destroy(void* ctx, void* handle){
+    free(handle);
+}
+
+void* 
+miniio_pipe_new(void* pctx, void* userdata){
+    int r;
+    struct miniio_uv_obj_s* obj;
+    struct miniio_uv_ctx_s* ctx = (struct miniio_uv_ctx_s*)pctx;
+    obj = malloc(sizeof(struct miniio_uv_obj_s));
+    if(! obj){
+        return 0;
+    }
+    r = uv_pipe_init(&ctx->loop, &obj->as.pipe, 0);
+    if(r){
+        free(obj);
+        return 0;
+    }
+    obj->objtype = OBJTYPE_PIPE;
+    obj->ctx = ctx;
+    obj->userdata = userdata;
+    obj->as.pipe.data = obj;
+    return obj;
+}
 
 /* Stream I/O */
 static void
 cb_close(uv_handle_t* uhandle){
     struct miniio_uv_obj_s* obj = (struct miniio_uv_obj_s*)uhandle->data;
     uintptr_t ev[4];
-    /* [4 0(handle-close) handle userdata] */
+    /* [4 (handle-close) handle userdata] */
     ev[0] = 4;
-    ev[1] = 0;
+    ev[1] = MINIIO_EVT_HANDLE_CLOSE;
     ev[2] = (uintptr_t)obj;
     ev[3] = (uintptr_t)obj->userdata;
     addevent(obj->ctx, ev);
 
     free(obj);
 }
+
 
 void 
 miniio_close(void* ctx, void* stream){
@@ -717,9 +979,9 @@ cb_write(uv_write_t* req, int status){
 
     buf = (struct miniio_uv_buffer_s*) uv_req_get_data((uv_req_t*)(void*)req);
 
-    /* [5 5(write-complete) buffer-handle buffer-userdata result] */
+    /* [5 (write-complete) buffer-handle buffer-userdata result] */
     ev[0] = 5;
-    ev[1] = 6;
+    ev[1] = MINIIO_EVT_WRITE_COMPLETE;
     ev[2] = (uintptr_t)buf;
     ev[3] = (uintptr_t)buf->userdata;
     ev[4] = status;
@@ -769,22 +1031,22 @@ cb_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
     size_t buflen = buf->len;
 
     if(nread == UV_EOF){
-        /* [4 7(read-eof) stm-handle stm-userdata] */
+        /* [4 (read-eof) stm-handle stm-userdata] */
         ev[0] = 4;
-        ev[1] = 7;
+        ev[1] = MINIIO_EVT_READ_EOF;
         ev[2] = (uintptr_t)obj;
         ev[3] = (uintptr_t)obj->userdata;
     }else if(nread == UV_ENOBUFS){
-        /* [5 8(read-stop) stm-handle stm-userdata bufend?] */
+        /* [5 (read-stop) stm-handle stm-userdata bufend?] */
         ev[0] = 5;
-        ev[1] = 8;
+        ev[1] = MINIIO_EVT_READ_STOP;
         ev[2] = (uintptr_t)obj;
         ev[3] = (uintptr_t)obj->userdata;
         ev[4] = 1;
     }else if(nread < 0){
-        /* [5 9(read-error) stm-handle stm-userdata err] */
+        /* [5 (read-error) stm-handle stm-userdata err] */
         ev[0] = 5;
-        ev[1] = 9;
+        ev[1] = MINIIO_EVT_READ_ERROR;
         ev[2] = (uintptr_t)obj;
         ev[3] = (uintptr_t)obj->userdata;
         ev[4] = (uintptr_t)nread;
@@ -794,9 +1056,9 @@ cb_read(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf){
             abort(); /* TODO: Perhaps we should ballon this in alloc cb? */
         }
 
-        /* [7 6(read-complete) stm-handle stm-userdata buf-handle start n] */
+        /* [7 (read-complete) stm-handle stm-userdata buf-handle start n] */
         ev[0] = 7;
-        ev[1] = 6;
+        ev[1] = MINIIO_EVT_READ_COMPLETE;
         ev[2] = (uintptr_t)obj;
         ev[3] = (uintptr_t)obj->userdata;
         ev[4] = (uintptr_t)buffer;

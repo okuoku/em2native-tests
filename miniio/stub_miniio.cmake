@@ -43,6 +43,30 @@ nccc_api(miniio_tcp_accept
 nccc_api(miniio_tcp_shutdown
     IN ptr ptr OUT s32)
 
+# Process
+nccc_api(miniio_process_param_create
+    IN ptr ptr ptr OUT ptr)
+nccc_api(miniio_process_param_destroy
+    IN ptr ptr OUT)
+nccc_api(miniio_process_param_workdir
+    IN ptr ptr ptr OUT s32)
+nccc_api(miniio_process_param_args
+    IN ptr ptr ptr s32 OUT s32)
+nccc_api(miniio_process_param_stdin
+    IN ptr ptr ptr OUT s32)
+nccc_api(miniio_process_param_stdout
+    IN ptr ptr ptr OUT s32)
+nccc_api(miniio_process_param_stderr
+    IN ptr ptr ptr OUT s32)
+nccc_api(miniio_process_spawn
+    IN ptr ptr OUT ptr)
+nccc_api(miniio_process_abort
+    IN ptr ptr OUT s32)
+nccc_api(miniio_process_destroy
+    IN ptr ptr OUT)
+nccc_api(miniio_pipe_new
+    IN ptr ptr OUT ptr)
+
 # Stream I/O
 nccc_api(miniio_close
     IN ptr ptr OUT)

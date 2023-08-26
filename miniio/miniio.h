@@ -8,6 +8,32 @@ extern "C" {
 
 #include <stdint.h>
 
+/* Events */
+/* [4  0(handle-close) handle userdata] */
+#define MINIIO_EVT_HANDLE_CLOSE 0
+/* [4  1(timer) handle userdata] */
+#define MINIIO_EVT_TIMER 1
+/* [5  2(netresolve) handle userdata result] */
+#define MINIIO_EVT_NETRESOLVE 2
+/* [5  3(incomming) handle userdata result] */
+#define MINIIO_EVT_CONNECT_INCOMMING 3
+/* [5  4(outgoing) handle userdata result] */
+#define MINIIO_EVT_CONNECT_OUTGOING 4
+/* [5  5(shutdown) handle userdata result] */
+#define MINIIO_EVT_SHUTDOWN 5
+/* [5  6(write-complete) buffer-handle buffer-userdata result] */
+#define MINIIO_EVT_WRITE_COMPLETE 6
+/* [7  7(read-complete) stm-handle stm-userdata buf-handle start n] */
+#define MINIIO_EVT_READ_COMPLETE 7
+/* [4  8(read-eof) stm-handle stm-userdata] */
+#define MINIIO_EVT_READ_EOF 8
+/* [5  9(read-stop) stm-handle stm-userdata bufend?] */
+#define MINIIO_EVT_READ_STOP 9
+/* [5 10(read-error) stm-handle stm-userdata err] */
+#define MINIIO_EVT_READ_ERROR 10
+/* [6 11(process-exit) handle userdata status signal] */
+#define MINIIO_EVT_PROCESS_EXIT 11
+
 /* I/O Context */
 void* miniio_ioctx_create(void);
 int miniio_ioctx_process(void* ctx);
@@ -43,17 +69,17 @@ void* miniio_process_param_create(void* ctx, const char* execpath,
                                   void* userdata);
 void miniio_process_param_destroy(void* ctx, void* param);
 int miniio_process_param_workdir(void* ctx, void* param, const char* dir);
-int miniio_process_param_args(void* ctx, void* argv, int argc);
-int miniio_process_param_stdin(void* ctx, void* pipe);
-int miniio_process_param_stdout(void* ctx, void* pipe);
-int miniio_process_param_stderr(void* ctx, void* pipe);
+int miniio_process_param_args(void* ctx, void* param, void* argv, int argc);
+int miniio_process_param_stdin(void* ctx, void* param, void* pipe);
+int miniio_process_param_stdout(void* ctx, void* param, void* pipe);
+int miniio_process_param_stderr(void* ctx, void* param, void* pipe);
 void* miniio_process_spawn(void* ctx, void* param);
 int miniio_process_abort(void* ctx, void* handle);
+void miniio_process_destroy(void* ctx, void* handle);
 void* miniio_pipe_new(void* ctx, void* userdata);
-void miniio_pipe_destroy(void* ctx, void* pipe);
 
 /* Stream I/O */
-void miniio_close(void* ctx, void* stream);
+void miniio_close(void* ctx, void* stream); /* For tcp and pipe */
 void* miniio_buffer_create(void* ctx, uint32_t size, void* userdata);
 void miniio_buffer_destroy(void* ctx, void* handle);
 void* miniio_buffer_lock(void* ctx, void* handle, uint32_t offset,
