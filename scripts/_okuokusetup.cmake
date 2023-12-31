@@ -2,6 +2,7 @@ set(mysubmodules
     integ # => https://github.com/okuoku/em2native-integ
     integ/coal
     integ/cwgl
+    integ/ext/legacygl/tinygl-cmake
     integ/ext/cwgl/angle-static-cmake
     integ/nccc
     integ/yuniframe
