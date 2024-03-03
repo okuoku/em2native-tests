@@ -10,6 +10,7 @@ set(mysubmodules
     ribbon-integ/ribbon
     ribbon-integ/yuni
     ribbon-integ/yuniribbit-proto
+    miniio
     )
 
 foreach(e ${mysubmodules})

@@ -13,3 +13,6 @@
 [submodule "ext/platform/whereami"]
 	path = ext/platform/whereami
 	url = https://github.com/gpakosz/whereami
+[submodule "miniio"]
+	path = miniio
+	url = https://github.com/okuoku/miniio

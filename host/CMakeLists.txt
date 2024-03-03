@@ -24,7 +24,7 @@ set(WITH_RUNTIME ${CMAKE_CURRENT_LIST_DIR}/../ribbon-integ/yuniribbit-proto)
 
 include_directories(
     ${RIBBON_ROOT}
-    ${CMAKE_CURRENT_LIST_DIR}/../miniio
+    ${CMAKE_CURRENT_LIST_DIR}/../miniio/include
     ${CMAKE_CURRENT_LIST_DIR}/../ext/platform/libuv/include)
 
 # Bytecode generation
@@ -44,7 +44,7 @@ add_executable(ribbon_miniio
     ribbon.c
     nccc_miniio.c
     nccc_embedded_libs.c
-    ../miniio/miniio_uv.c
+    ../miniio/src/miniio_uv.c
     ${RIBBON_ROOT}/c-proto.c)
 
 target_link_libraries(ribbon_miniio uv_a)
