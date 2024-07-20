@@ -46,6 +46,10 @@ endif()
 if(YFRM_CWGL_USE_ANGLE)
     list(APPEND backendlibs
         angle_static)
+    if(WIN32)
+        list(APPEND backendlibs
+            synchronization)
+    endif()
 endif()
 if(YFRM_CWGL_EXPERIMENTAL_TRACKER)
     # FIXME: Move this to shxm dependency
