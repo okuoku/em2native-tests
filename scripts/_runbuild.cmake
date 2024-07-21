@@ -42,7 +42,16 @@ if(CYGPATH OR WIN32)
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/..
         RESULT_VARIABLE rr
         )
-    message(STATUS "Result = ${rr}")
 else()
+    execute_process(
+        COMMAND 
+        ${CMAKE_COMMAND} -DPHASE=cycle -P scripts/_localbuild.cmake
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/..
+        RESULT_VARIABLE rr
+        )
+endif()
 
+message(STATUS "Result = ${rr}")
+if(rr)
+    message(FATAL_ERROR "Failed to build some module(s)")
 endif()
