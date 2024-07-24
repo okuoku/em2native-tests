@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 set(root0 ${CMAKE_CURRENT_LIST_DIR}/..)
 get_filename_component(root "${root0}" ABSOLUTE)
 set(buildroot ${root}/_build)
-set(ndkversion 25.1.8937393)
+set(ndkversion 27.0.12077973)
 
 if(NOT PHASE)
     set(PHASE generate)
