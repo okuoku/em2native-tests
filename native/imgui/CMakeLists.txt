@@ -81,30 +81,8 @@ endif()
 
 if(APPLE)
     if(YFRM_CWGL_USE_VULKAN)
-        # FIXME: Use CMake native feature later
-        #        https://github.com/okuoku/yuniframe/issues/4
-        if("${CMAKE_SYSTEM_NAME}" STREQUAL iOS)
-            set(prefix ios)
-        elseif("${CMAKE_SYSTEM_NAME}" STREQUAL tvOS)
-            set(prefix tvos)
-        else()
-            set(prefix macos)
-        endif()
-        if(${prefix} STREQUAL macos)
-            set(platform arm64_x86_64)
-        else()
-            if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
-                if(${prefix} STREQUAL tvos)
-                    set(platform arm64_arm64e)
-                else()
-                    set(platform arm64)
-                endif()
-            else()
-                set(platform arm64_x86_64-simulator)
-            endif()
-        endif()
         list(APPEND backendlibs
-            ${YFRM_VULKANSDK_PREFIX}/MoltenVK/MoltenVK.xcframework/${prefix}-${platform}/libMoltenVK.a)
+            ${YFRM_VULKANSDK_PREFIX}/macOS/lib/libMoltenVK.dylib)
     endif()
     # FIXME: Why do we need it actually?
     list(APPEND backendlibs

@@ -3,6 +3,7 @@ set(root0 ${CMAKE_CURRENT_LIST_DIR}/..)
 get_filename_component(root "${root0}" ABSOLUTE)
 set(buildroot ${root}/_build)
 set(ndkversion 27.0.12077973)
+set(vulkansdk /Users/okuoku/VulkanSDK/1.3.290.0) # FIXME: Hardcode
 
 if(NOT PHASE)
     set(PHASE generate)
@@ -31,7 +32,6 @@ set(win_variants
     core:SDL2-CWGL-Vulkan)
 
 set(apple_variants
-    # dep:ANGLE-Vulkan
     dep:ANGLE-Metal
     dep:SDL2
     dep:GLSLang
@@ -51,13 +51,19 @@ set(posix_variants
     )
 
 set(apple_mobile_variants
-    # dep:ANGLE-Vulkan
-    # dep:ANGLE-Metal
+    dep:ANGLE-Metal
     dep:SDL2
     dep:GLSLang
     dep:UV
-    # core:SDL2-ANGLE-Metal
-    core:SDL2-CWGL-Vulkan
+    core:SDL2-ANGLE-Metal
+    #core:SDL2-CWGL-Vulkan
+    core:SDL2-PlatformGLES)
+
+set(apple_tv_variants # ANGLE does not support tvOS 
+    dep:SDL2
+    dep:GLSLang
+    dep:UV
+    #core:SDL2-CWGL-Vulkan
     core:SDL2-PlatformGLES)
 
 function(build nam)
@@ -92,8 +98,8 @@ function(genninja nam proj platform abi slot)
     set(binaryroot "-DYFRM_BINARY_ROOT=${buildroot}/${platform}@${abi}")
 
     # FIXME: Move this to local configuration
-    if(EXISTS /Volumes/devel/VulkanSDK/1.3.250.1)
-        set(vulkansdk "-DYFRM_VULKANSDK_PREFIX=/Volumes/devel/VulkanSDK/1.3.250.1")
+    if(EXISTS ${vulkansdk})
+        set(vulkansdk "-DYFRM_VULKANSDK_PREFIX=${vulkansdk}")
     else()
         set(vulkansdk)
     endif()
@@ -185,8 +191,13 @@ elseif(APPLE)
     foreach(v ${apple_variants})
         list(APPEND variants Mac:Native:${v})
     endforeach()
-    foreach(m iOS:arm64 iOSsim:x86_64 tvOS:arm64 tvOSsim:x86_64)
+    foreach(m iOS:arm64 iOSsim:x86_64)
         foreach(v ${apple_mobile_variants})
+            list(APPEND variants ${m}:${v})
+        endforeach()
+    endforeach()
+    foreach(m tvOS:arm64 tvOSsim:x86_64)
+        foreach(v ${apple_tv_variants})
             list(APPEND variants ${m}:${v})
         endforeach()
     endforeach()
