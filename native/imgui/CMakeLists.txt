@@ -101,7 +101,11 @@ if(TESTPKG)
             PROPERTIES
             # https://cmake.org/cmake/help/latest/prop_tgt/MACOSX_BUNDLE_INFO_PLIST.html
             MACOSX_BUNDLE TRUE
-            MAXOSX_BUNDLE_GUI_IDENTIFIER org.okotama.yuniframe.test
+            MACOSX_BUNDLE_BUNDLE_NAME "em2app"
+            MACOSX_BUNDLE_GUI_IDENTIFIER "${TESTPKGID}"
+            MACOSX_BUNDLE_BUNDLE_VERSION 1.0
+            MACOSX_BUNDLE_SHORT_VERSION_STRING 1.0
+            MACOSX_BUNDLE_LONG_VERSION_STRING 1.0
             # Workaround for bundle identifier
             # https://zenn.dev/link/comments/abea557dc83ec9
             XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"

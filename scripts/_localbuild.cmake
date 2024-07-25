@@ -93,6 +93,9 @@ function(gencmake nam proj platform abi slot)
     set(buildtarget)
     set(deftype)
 
+    # Package ID (Reversed DNS name)
+    set(pkgid org.okotama.yuniframe.test.${slot})
+
     if(${proj} STREQUAL core)
         set(cmakeroot ${root})
         set(buildtarget "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
@@ -106,6 +109,7 @@ function(gencmake nam proj platform abi slot)
     elseif(${proj} STREQUAL pkgXcode)
         set(cmakeroot ${root})
         set(buildtarget 
+            "-DTESTPKGID=${pkgid}"
             "-DTESTPKG=Xcode"
             "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
         set(gen "Xcode")
