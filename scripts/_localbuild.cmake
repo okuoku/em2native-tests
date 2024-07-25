@@ -31,14 +31,6 @@ set(win_variants
     core:SDL2-ANGLE-Vulkan
     core:SDL2-CWGL-Vulkan)
 
-set(apple_variants
-    dep:ANGLE-Metal
-    dep:SDL2
-    dep:GLSLang
-    dep:UV
-    core:SDL2-ANGLE-Metal
-    core:SDL2-CWGL-Vulkan)
-
 set(posix_variants
     # Assume Mesa and it provides both GLES and Vulkan
     #dep:ANGLE-Vulkan ## FIXME: Needs patch..?
@@ -49,6 +41,14 @@ set(posix_variants
     core:SDL2-CWGL-Vulkan
     #core:SDL2-ANGLE-Vulkan
     )
+
+set(apple_variants
+    dep:ANGLE-Metal
+    dep:SDL2
+    dep:GLSLang
+    dep:UV
+    core:SDL2-ANGLE-Metal
+    core:SDL2-CWGL-Vulkan)
 
 set(apple_mobile_variants
     dep:ANGLE-Metal
@@ -80,7 +80,7 @@ function(build nam)
     endforeach()
 endfunction()
 
-function(genninja nam proj platform abi slot)
+function(gencmake nam proj platform abi slot)
     set(sysroot)
     set(system_name)
     set(architectures)
@@ -130,7 +130,11 @@ function(genninja nam proj platform abi slot)
         # Native Windows, Mac, ...
     endif()
 
-    message(STATUS "Configure ${nam} (${abi}, sysroot ${sysroot})")
+    if(sysroot)
+        message(STATUS "Configure ${nam} (${abi}, sysroot ${sysroot})")
+    else()
+        message(STATUS "Configure ${nam} (${abi})")
+    endif()
     execute_process(COMMAND
         ${CMAKE_COMMAND} -G "Ninja Multi-Config"
         -S ${cmakeroot}
@@ -220,12 +224,12 @@ foreach(v ${variants})
         set(nam ${platform}${abi}@${slot})
 
         if(PHASE STREQUAL generate)
-            genninja(${nam} ${proj} ${platform} ${abi} ${slot})
+            gencmake(${nam} ${proj} ${platform} ${abi} ${slot})
         elseif(PHASE STREQUAL build)
             build(${nam})
         elseif(PHASE STREQUAL cycle)
             if(NOT EXISTS ${buildroot}/${nam}/build.ninja)
-                genninja(${nam} ${proj} ${platform} ${abi} ${slot})
+                gencmake(${nam} ${proj} ${platform} ${abi} ${slot})
             endif()
             build(${nam})
         else()
