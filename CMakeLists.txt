@@ -92,10 +92,12 @@ add_subdirectory(integ/cwgl cwgl)
 add_subdirectory(integ/yuniframe yfrm) # Module
 
 # Ribbon
-set(YUNI_SKIP_TESTS ON)
-set(RIBBON_SKIP_TESTS ON)
-set(USE_RIBBON_PREBOOT ON)
-add_subdirectory(ribbon-integ)
+if(NOT TESTPKG)
+    set(YUNI_SKIP_TESTS ON)
+    set(RIBBON_SKIP_TESTS ON)
+    set(USE_RIBBON_PREBOOT ON)
+    add_subdirectory(ribbon-integ)
+endif()
 
 # Apps
 add_subdirectory(native/imgui test-imgui)

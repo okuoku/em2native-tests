@@ -23,7 +23,7 @@ if(ANDROID)
     add_library(${apptgt} SHARED
         dummy.cpp)
 else()
-    set(apptgt test-imgui-win32)
+    set(apptgt test-imgui-app)
     add_executable(${apptgt} WIN32
         dummy.cpp)
 endif()
@@ -95,4 +95,19 @@ target_link_libraries(${apptgt} PRIVATE
     ${backendlibs}
     test-imgui yfrm yfrm_main cwgl)
 
-
+if(TESTPKG)
+    if(${TESTPKG} STREQUAL Xcode)
+        set_target_properties(${apptgt}
+            PROPERTIES
+            # https://cmake.org/cmake/help/latest/prop_tgt/MACOSX_BUNDLE_INFO_PLIST.html
+            MACOSX_BUNDLE TRUE
+            MAXOSX_BUNDLE_GUI_IDENTIFIER org.okotama.yuniframe.test
+            # Workaround for bundle identifier
+            # https://zenn.dev/link/comments/abea557dc83ec9
+            XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+            XCODE_ATTRIBUTE_ENABLE_BITCODE "NO"
+            )
+    else()
+        message(FATAL_ERROR "Unknown pkg mode (${TESTPKG})")
+    endif()
+endif()

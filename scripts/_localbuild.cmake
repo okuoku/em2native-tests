@@ -48,7 +48,9 @@ set(apple_variants
     dep:GLSLang
     dep:UV
     core:SDL2-ANGLE-Metal
-    core:SDL2-CWGL-Vulkan)
+    core:SDL2-CWGL-Vulkan
+    pkgXcode:SDL2-ANGLE-Metal
+    pkgXcode:SDL2-CWGL-Vulkan)
 
 set(apple_mobile_variants
     dep:ANGLE-Metal
@@ -57,14 +59,17 @@ set(apple_mobile_variants
     dep:UV
     core:SDL2-ANGLE-Metal
     #core:SDL2-CWGL-Vulkan
-    core:SDL2-PlatformGLES)
+    core:SDL2-PlatformGLES
+    pkgXcode:SDL2-ANGLE-Metal
+    pkgXcode:SDL2-PlatformGLES)
 
 set(apple_tv_variants # ANGLE does not support tvOS 
     dep:SDL2
     dep:GLSLang
     dep:UV
     #core:SDL2-CWGL-Vulkan
-    core:SDL2-PlatformGLES)
+    core:SDL2-PlatformGLES
+    pkgXcode:SDL2-PlatformGLES)
 
 function(build nam)
     foreach(cfg ${buildtypes})
@@ -86,13 +91,26 @@ function(gencmake nam proj platform abi slot)
     set(architectures)
     set(toolchain_file)
     set(buildtarget)
+    set(deftype)
 
     if(${proj} STREQUAL core)
         set(cmakeroot ${root})
         set(buildtarget "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
+        set(deftype -DCMAKE_DEFAULT_BUILD_TYPE=Debug)
+        set(gen "Ninja Multi-Config")
     elseif(${proj} STREQUAL dep)
         set(cmakeroot ${root}/deps)
         set(buildtarget "-DTGT=${slot}")
+        set(deftype -DCMAKE_DEFAULT_BUILD_TYPE=Debug)
+        set(gen "Ninja Multi-Config")
+    elseif(${proj} STREQUAL pkgXcode)
+        set(cmakeroot ${root})
+        set(buildtarget 
+            "-DTESTPKG=Xcode"
+            "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
+        set(gen "Xcode")
+    else()
+        message(FATAL_ERROR "Unknown project (${proj})")
     endif()
 
     set(binaryroot "-DYFRM_BINARY_ROOT=${buildroot}/${platform}@${abi}")
@@ -136,12 +154,12 @@ function(gencmake nam proj platform abi slot)
         message(STATUS "Configure ${nam} (${abi})")
     endif()
     execute_process(COMMAND
-        ${CMAKE_COMMAND} -G "Ninja Multi-Config"
+        ${CMAKE_COMMAND} -G "${gen}"
         -S ${cmakeroot}
         -B ${buildroot}/${nam}
         "-DCMAKE_CONFIGURATION_TYPES=${buildtypes}"
-        -DCMAKE_DEFAULT_BUILD_TYPE=Debug
         -DCMAKE_INSTALL_PREFIX=${buildroot}/install/${nam}
+        ${deftype}
         ${vulkansdk}
         ${sysroot}
         ${system_name}
@@ -221,7 +239,11 @@ foreach(v ${variants})
         set(proj ${CMAKE_MATCH_3})
         set(slot ${CMAKE_MATCH_4})
 
-        set(nam ${platform}${abi}@${slot})
+        if(${proj} MATCHES "^pkg")
+            set(nam pkg-${platform}${abi}@${slot})
+        else()
+            set(nam ${platform}${abi}@${slot})
+        endif()
 
         if(PHASE STREQUAL generate)
             gencmake(${nam} ${proj} ${platform} ${abi} ${slot})
