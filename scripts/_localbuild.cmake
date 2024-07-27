@@ -133,6 +133,13 @@ function(genandroidpkg nam slot)
 
     set(pkgroot ${buildroot}/${nam})
 
+    # Replacements
+    string(TOLOWER ${slot} pkgname0)
+    string(REPLACE - _ pkgname ${pkgname0})
+    set(YFRM_PKGID org.okotama.yuniframe.test.${pkgname})
+    set(YFRM_SLOT ${slot})
+    set(YFRM_PFJAVADIR "\"../../../integ/ext/platform/SDL2/android-project/app/src/main/java\"")
+
     foreach(r gradle template resources sdl2)
         foreach(e ${${r}-files})
             set(file ${${r}-root}/${e})
