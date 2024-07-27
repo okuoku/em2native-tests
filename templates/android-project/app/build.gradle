@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace 'org.cltn.yfrm'
-    compileSdk 33
+    compileSdk 34
     externalNativeBuild {
         cmake {
             path file('../../../CMakeLists.txt')
@@ -14,8 +14,8 @@ android {
 
     defaultConfig {
         applicationId "org.cltn.yfrm.userapp"
-        minSdk 24
-        targetSdk 33
+        minSdk 22
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
