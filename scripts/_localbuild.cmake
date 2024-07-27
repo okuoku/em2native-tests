@@ -34,6 +34,13 @@ set(win_variants
     core:SDL2-ANGLE-Vulkan
     core:SDL2-CWGL-Vulkan)
 
+set(winuwp_variants
+    dep:ANGLE-DirectX11
+    dep:SDL2
+    # dep:GLSLang
+    core:SDL2-ANGLE-DirectX11
+    pkgUWP:SDL2-ANGLE-DirectX11)
+
 set(posix_variants
     # Assume Mesa and it provides both GLES and Vulkan
     #dep:ANGLE-Vulkan ## FIXME: Needs patch..?
@@ -180,6 +187,17 @@ function(gencmake nam proj platform abi slot)
             "-DTESTPKG=Xcode"
             "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
         set(gen "Xcode")
+    elseif(${proj} STREQUAL pkgUWP)
+        # NB: Changing system version requires complete clean build
+        set(cmakeroot ${root})
+        set(buildtarget 
+            -DCMAKE_GENERATOR_PLATFORM=x64
+            # 19041: Windows10 2004
+            -DCMAKE_SYSTEM_VERSION=10.0.19041.0
+            "-DTESTPKGID=${pkgid}"
+            "-DTESTPKG=UWP"
+            "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
+        set(gen "Visual Studio 17 2022")
     else()
         message(FATAL_ERROR "Unknown project (${proj})")
     endif()
@@ -215,6 +233,8 @@ function(gencmake nam proj platform abi slot)
         set(system_name "-DCMAKE_SYSTEM_NAME=Android")
         set(toolchain_file "-DCMAKE_TOOLCHAIN_FILE=${android_home}/ndk/${ndkversion}/build/cmake/android.toolchain.cmake")
         set(architectures -DANDROID_ABI=${abi} -DANDROID_ARM_NEON=ON)
+    elseif(${abi} MATCHES "^MSVCUWP")
+        set(system_name -DCMAKE_SYSTEM_NAME=WindowsStore)
     else()
         # Native Windows, Mac, ...
     endif()
@@ -284,6 +304,9 @@ if(WIN32)
     foreach(v ${win_variants})
         list(APPEND variants Windows:MSVCx64:${v})
     endforeach()
+    foreach(v ${winuwp_variants})
+        list(APPEND variants Windows:MSVCUWPx64:${v})
+    endforeach()
 elseif(APPLE)
     foreach(v ${apple_variants})
         list(APPEND variants Mac:Native:${v})
@@ -350,5 +373,3 @@ foreach(v ${variants})
         message(FATAL_ERROR "???: ${v}")
     endif()
 endforeach()
-
-

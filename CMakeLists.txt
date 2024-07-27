@@ -83,7 +83,12 @@ if(YFRM_CWGL_USE_ANGLE)
     add_subdirectory(integ/proj/angle angle) # Angle (sometimes) depends glslang
 endif()
 add_subdirectory(integ/proj/sdl2 sdl2)
-add_subdirectory(proj/uv uv)
+
+if("${CMAKE_SYSTEM_NAME}" STREQUAL WindowsStore)
+    # FIXME:
+else()
+    add_subdirectory(proj/uv uv)
+endif()
 
 # Libs
 set(NCCC_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/nccc)

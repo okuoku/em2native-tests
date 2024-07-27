@@ -95,6 +95,19 @@ target_link_libraries(${apptgt} PRIVATE
     ${backendlibs}
     test-imgui yfrm yfrm_main cwgl)
 
+if("${CMAKE_SYSTEM_NAME}" STREQUAL WindowsStore)
+    set(rtmain 
+        ../../integ/yuniframe/platform/src-sdl2/winrt/SDL2_winrt_main_NonXAML.cpp)
+    target_sources(${apptgt} PRIVATE ${rtmain})
+    set_source_files_properties(${rtmain}
+        PROPERTIES COMPILE_FLAGS "/ZW")
+    target_link_libraries(${apptgt} LINK_PRIVATE
+        -nodefaultlib:vccorlib$<$<CONFIG:Debug>:d>
+        -nodefaultlib:msvcrt$<$<CONFIG:Debug>:d>
+        vccorlib$<$<CONFIG:Debug>:d>.lib
+        msvcrt$<$<CONFIG:Debug>:d>.lib)
+endif()
+
 if(TESTPKG)
     if(${TESTPKG} STREQUAL Xcode)
         set_target_properties(${apptgt}
@@ -111,6 +124,8 @@ if(TESTPKG)
             XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
             XCODE_ATTRIBUTE_ENABLE_BITCODE "NO"
             )
+    elseif(${TESTPKG} STREQUAL UWP)
+        # Implement resource files here
     else()
         message(FATAL_ERROR "Unknown pkg mode (${TESTPKG})")
     endif()

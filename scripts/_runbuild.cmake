@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
 
+if(NOT PHASE)
+    set(PHASE cycle)
+endif()
+
 # Since we cannot depend on CYGWIN variable here, find cygpath instead
 find_program(CYGPATH cygpath)
 
@@ -38,14 +42,15 @@ if(CYGPATH OR WIN32)
 
     execute_process(
         COMMAND cmd /c chcp 65001 &&
-        ${vcvars64} && ${cmake_path} -DPHASE=cycle -P scripts/_localbuild.cmake
+        ${vcvars64} && ${cmake_path} -DPHASE=${PHASE} 
+        -P scripts/_localbuild.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/..
         RESULT_VARIABLE rr
         )
 else()
     execute_process(
         COMMAND 
-        ${CMAKE_COMMAND} -DPHASE=cycle -P scripts/_localbuild.cmake
+        ${CMAKE_COMMAND} -DPHASE=${PHASE} -P scripts/_localbuild.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/..
         RESULT_VARIABLE rr
         )
