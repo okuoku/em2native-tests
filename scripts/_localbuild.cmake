@@ -101,7 +101,7 @@ function(genandroidpkg nam slot)
         build.gradle
         settings.gradle)
 
-    set(resource-files
+    set(resources-files
         res/values/strings.xml
         res/xml/backup_rules.xml
         res/xml/data_extraction_rules.xml

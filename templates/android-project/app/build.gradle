@@ -7,7 +7,7 @@ android {
     compileSdk 33
     externalNativeBuild {
         cmake {
-            path file('../../CMakeLists.txt')
+            path file('../../../CMakeLists.txt')
             version '3.22.1'
         }
     }
@@ -21,79 +21,20 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments "-DYFRM_WITH_PREBUILT_LIBS=1", "-DYFRM_BINARY_ROOT_GUESS=guess_android"
+                arguments "-DYFRM_WITH_PREBUILT_LIBS=1", "-DYFRM_BINARY_ROOT_GUESS=guess_android", "-DTESTSLOT=SDL2-PlatformGLES"
+                targets "test-imgui-so"
             }
         }
 
         sourceSets {
             main {
                 java {
-                    srcDirs "../../integ/ext/platform/SDL2/android-project/app/src/main/java"
+                    srcDirs "../java",
+                    "../../../integ/ext/platform/SDL2/android-project/app/src/main/java"
                 }
-                manifest.srcFile "../../Android.srcs/_common/AndroidManifest.xml"
+                manifest.srcFile "../AndroidManifest.xml"
                 res {
-                    srcDirs "../../Android.srcs/_common/res"
-                }
-
-            }
-        }
-    }
-
-    flavorDimensions "containerapp", "backend"
-    productFlavors {
-        CWGLVulkan_ {
-            dimension "backend"
-            applicationIdSuffix ".cwglvulkan"
-            externalNativeBuild {
-                cmake {
-                    arguments "-DTESTSLOT=SDL2-CWGL-Vulkan"
-                }
-            }
-        }
-        PlatformGLES_ {
-            dimension "backend"
-            applicationIdSuffix ".gles"
-            externalNativeBuild {
-                cmake {
-                    arguments "-DTESTSLOT=SDL2-PlatformGLES"
-                }
-            }
-        }
-        app_test1 {
-            dimension "containerapp"
-            applicationIdSuffix ".app_test1"
-            externalNativeBuild {
-                cmake {
-                    targets "test-imgui-so"
-                }
-            }
-            sourceSets {
-                main {
-                    java {
-                        srcDirs "../../Android.srcs/test1/java"
-                    }
-                    manifest {
-                        srcFile "../../Android.srcs/test1/AndroidManifest.xml"
-                    }
-                }
-            }
-        }
-        app_test2 {
-            dimension "containerapp"
-            applicationIdSuffix ".app_test2"
-            externalNativeBuild {
-                cmake {
-                    targets "test-imgui-so"
-                }
-            }
-            sourceSets {
-                main {
-                    java {
-                        srcDirs "../../Android.srcs/test2/java"
-                    }
-                    manifest {
-                        srcFile "../../Android.srcs/test2/AndroidManifest.xml"
-                    }
+                    srcDirs "../res"
                 }
             }
         }
