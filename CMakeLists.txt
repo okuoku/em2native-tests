@@ -30,7 +30,12 @@ enable_testing()
 
 # Setup
 
-set(YFRM_SDL2_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/sdl2header)
+if(NOT YFRM_BINARY_ROOT)
+    set(YFRM_SDL2_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_yfrm_headers)
+else()
+    set(YFRM_SDL2_PREFIX ${YFRM_BINARY_ROOT}/_yfrm_headers)
+endif()
+
 # Options
 set(YFRM_CWGL_USE_ANGLE OFF)
 set(YFRM_CWGL_USE_VULKAN OFF)
