@@ -18,7 +18,10 @@ set(android_variants
     dep:UV
     core:SDL2-PlatformGLES
     core:SDL2-CWGL-Vulkan
-    core:SDL2-ANGLE-Vulkan)
+    core:SDL2-ANGLE-Vulkan
+    pkgAndroid:SDL2-PlatformGLES
+    pkgAndroid:SDL2-CWGL-Vulkan
+    pkgAndroid:SDL2-ANGLE-Vulkan)
 
 set(win_variants
     dep:ANGLE-DirectX11
@@ -82,6 +85,63 @@ function(build nam)
         if(rr)
             message(FATAL_ERROR "Failed to build ${nam}")
         endif()
+    endforeach()
+endfunction()
+
+function(genandroidpkg nam slot)
+    set(gradle-files
+        gradlew
+        gradlew.bat
+        gradle.properties
+        gradle/wrapper/gradle-wrapper.jar
+        gradle/wrapper/gradle-wrapper.properties)
+
+    set(template-files
+        app/build.gradle
+        build.gradle
+        settings.gradle)
+
+    set(resource-files
+        res/values/strings.xml
+        res/xml/backup_rules.xml
+        res/xml/data_extraction_rules.xml
+        res/drawable/ic_launcher_background.xml
+        res/drawable-v24/ic_launcher_foreground.xml
+        res/mipmap-mdpi/ic_launcher.webp
+        res/mipmap-mdpi/ic_launcher_round.webp
+        res/mipmap-hdpi/ic_launcher.webp
+        res/mipmap-hdpi/ic_launcher_round.webp
+        res/mipmap-xhdpi/ic_launcher.webp
+        res/mipmap-xhdpi/ic_launcher_round.webp
+        res/mipmap-xxhdpi/ic_launcher.webp
+        res/mipmap-xxhdpi/ic_launcher_round.webp
+        res/mipmap-xxxhdpi/ic_launcher.webp
+        res/mipmap-xxxhdpi/ic_launcher_round.webp
+        res/mipmap-anydpi-v26/ic_launcher.xml
+        res/mipmap-anydpi-v26/ic_launcher_round.xml)
+
+    set(sdl2-files
+        AndroidManifest.xml
+        java/org/cltn/yfrm/user_common/SDL2ActivityWrapper_test1.java
+        )
+
+    set(manifest ${root}/templates/android-sdl2/AndroidManifest.xml)
+    set(gradle-root ${root}/templates/android-gradle)
+    set(template-root ${root}/templates/android-project)
+    set(resources-root ${root}/templates/android-resources)
+    set(sdl2-root ${root}/templates/android-sdl2)
+
+    set(pkgroot ${buildroot}/${nam})
+
+    foreach(r gradle template resources sdl2)
+        foreach(e ${${r}-files})
+            set(file ${${r}-root}/${e})
+            if(EXISTS ${file}.in)
+                configure_file(${file}.in ${pkgroot}/${e} @ONLY)
+            else()
+                configure_file(${file} ${pkgroot}/${e} COPYONLY)
+            endif()
+        endforeach()
     endforeach()
 endfunction()
 
@@ -202,10 +262,14 @@ endif()
 # Host dispatch
 set(variants)
 if(has_android_sdk)
-    foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
-        foreach(v ${android_variants})
-            list(APPEND variants Android:${abi}:${v})
-        endforeach()
+    foreach(v ${android_variants})
+        if(${v} MATCHES "^pkgAndroid")
+            list(APPEND variants Android:any:${v})
+        else()
+            foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
+                list(APPEND variants Android:${abi}:${v})
+            endforeach()
+        endif()
     endforeach()
 endif()
 
@@ -243,19 +307,29 @@ foreach(v ${variants})
         set(proj ${CMAKE_MATCH_3})
         set(slot ${CMAKE_MATCH_4})
 
-        if(${proj} MATCHES "^pkg")
+        set(is_cmake ON)
+        if(${proj} MATCHES "^pkgAndroid")
+            set(nam pkg-${platform}@${slot})
+            set(is_cmake OFF)
+        elseif(${proj} MATCHES "^pkg")
             set(nam pkg-${platform}${abi}@${slot})
         else()
             set(nam ${platform}${abi}@${slot})
         endif()
 
         if(PHASE STREQUAL generate)
-            gencmake(${nam} ${proj} ${platform} ${abi} ${slot})
+            if(is_cmake)
+                gencmake(${nam} ${proj} ${platform} ${abi} ${slot})
+            elseif(${proj} MATCHES "^pkgAndroid")
+                genandroidpkg(${nam} ${slot})
+            endif()
         elseif(PHASE STREQUAL build)
             build(${nam})
         elseif(PHASE STREQUAL cycle)
-            if(NOT EXISTS ${buildroot}/${nam}/build.ninja)
+            if(is_cmake)
                 gencmake(${nam} ${proj} ${platform} ${abi} ${slot})
+            elseif(${proj} MATCHES "^pkgAndroid")
+                genandroidpkg(${nam} ${slot})
             endif()
             build(${nam})
         else()
