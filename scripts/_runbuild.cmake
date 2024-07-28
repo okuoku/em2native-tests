@@ -36,8 +36,9 @@ if(CYGPATH OR WIN32)
 
     if(CYGPATH)
         # Override PATH
+        # Javapath is for Android SDK
         # FIXME: We can mask Git but not for Python
-        set(ENV{PATH} /cygdrive/c/Windows/System32:/cygdrive/c/Windows)
+        set(ENV{PATH} "/cygdrive/c/Windows/System32:/cygdrive/c/Windows:/cygdrive/c/Program Files/Common Files/Oracle/Java/javapath")
     endif()
 
     execute_process(
