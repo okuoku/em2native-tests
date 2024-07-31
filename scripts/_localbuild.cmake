@@ -69,17 +69,19 @@ set(apple_mobile_variants
     dep:GLSLang
     dep:UV
     core:SDL2-ANGLE-Metal
-    #core:SDL2-CWGL-Vulkan
+    core:SDL2-CWGL-Vulkan
     core:SDL2-PlatformGLES
     pkgXcode:SDL2-ANGLE-Metal
+    pkgXcode:SDL2-CWGL-Vulkan
     pkgXcode:SDL2-PlatformGLES)
 
 set(apple_tv_variants # ANGLE does not support tvOS 
     dep:SDL2
     dep:GLSLang
     dep:UV
-    #core:SDL2-CWGL-Vulkan
+    core:SDL2-CWGL-Vulkan
     core:SDL2-PlatformGLES
+    pkgXcode:SDL2-CWGL-Vulkan
     pkgXcode:SDL2-PlatformGLES)
 
 function(build nam)
