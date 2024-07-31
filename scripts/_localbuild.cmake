@@ -99,16 +99,18 @@ function(buildandroidpkg nam)
     message(STATUS "Entering ${nam} (Android gradlew)")
     if(WIN32)
         set(ext .bat)
+        set(pref)
     else()
         set(ext)
+        set(pref ./)
     endif()
     execute_process(COMMAND
-        gradlew${ext} assemble
+        ${pref}gradlew${ext} assemble
         RESULT_VARIABLE rr
         WORKING_DIRECTORY ${buildroot}/${nam}
         )
     if(rr)
-        message(FATAL_ERROR "Failed to build ${nam}")
+        message(FATAL_ERROR "Failed to build ${nam} (${rr})")
     endif()
 endfunction()
 
