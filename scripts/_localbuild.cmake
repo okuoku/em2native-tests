@@ -3,7 +3,8 @@ set(root0 ${CMAKE_CURRENT_LIST_DIR}/..)
 get_filename_component(root "${root0}" ABSOLUTE)
 set(buildroot ${root}/_build)
 set(ndkversion 27.0.12077973)
-set(vulkansdk /Users/okuoku/VulkanSDK/1.3.290.0) # FIXME: Hardcode
+# Extract https://github.com/KhronosGroup/MoltenVK/releases/download/v1.2.10-rc2/MoltenVK-all.tar
+set(moltenvk_prefix "${CMAKE_CURRENT_LIST_DIR}/../_moltenvk/MoltenVK")
 
 if(NOT PHASE)
     set(PHASE generate)
@@ -221,14 +222,11 @@ function(gencmake nam proj platform abi slot)
         message(FATAL_ERROR "Unknown project (${proj})")
     endif()
 
-    set(binaryroot "-DYFRM_BINARY_ROOT=${buildroot}/${platform}@${abi}")
-
-    # FIXME: Move this to local configuration
-    if(EXISTS ${vulkansdk})
-        set(vulkansdk "-DYFRM_VULKANSDK_PREFIX=${vulkansdk}")
-    else()
-        set(vulkansdk)
+    if(EXISTS ${moltenvk_prefix})
+        set(moltenvk "-DYFRM_MOLTENVK_PREFIX=${moltenvk_prefix}")
     endif()
+
+    set(binaryroot "-DYFRM_BINARY_ROOT=${buildroot}/${platform}@${abi}")
 
     if(${platform} STREQUAL iOSsim)
         set(architectures "-DCMAKE_OSX_ARCHITECTURES=${abi}")
@@ -270,7 +268,7 @@ function(gencmake nam proj platform abi slot)
         "-DCMAKE_CONFIGURATION_TYPES=${buildtypes}"
         -DCMAKE_INSTALL_PREFIX=${buildroot}/install/${nam}
         ${deftype}
-        ${vulkansdk}
+        ${moltenvk}
         ${sysroot}
         ${system_name}
         ${architectures}

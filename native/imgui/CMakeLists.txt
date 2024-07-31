@@ -3,6 +3,9 @@ project(test-imgui CXX)
 
 include_directories(imgui)
 
+if(YFRM_MOLTENVK_PREFIX) # Consume paramter
+endif()
+
 add_library(test-imgui OBJECT
     imgui/imgui.cpp
     imgui/imgui_demo.cpp
@@ -82,7 +85,8 @@ endif()
 if(APPLE)
     if(YFRM_CWGL_USE_VULKAN)
         list(APPEND backendlibs
-            ${YFRM_VULKANSDK_PREFIX}/macOS/lib/libMoltenVK.dylib)
+            ${YFRM_MOLTENVK_PREFIX}/MoltenVK/dynamic/MoltenVK.xcframework
+            )
     endif()
     # FIXME: Why do we need it actually?
     list(APPEND backendlibs

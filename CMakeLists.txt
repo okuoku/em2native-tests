@@ -1,17 +1,5 @@
-# Choose some default
-
 if(NOT TESTSLOT)
-    if(WIN32)
-        set(TESTSLOT SDL2-ANGLE-DirectX11)
-    elseif(APPLE)
-        if(NOT YFRM_VULKANSDK_PREFIX)
-            set(TESTSLOT SDL2-ANGLE-Metal)
-        else()
-            set(TESTSLOT SDL2-ANGLE-Vulkan)
-        endif()
-    else()
-        message(FATAL_ERROR "Could not determine TESTSLOT")
-    endif()
+    message(FATAL_ERROR "Could not determine TESTSLOT")
 endif()
 
 # Guess binary root for Android Studio
