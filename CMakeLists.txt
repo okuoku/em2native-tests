@@ -4,10 +4,8 @@ endif()
 
 # Guess binary root for Android Studio
 if(DEFINED YFRM_BINARY_ROOT_GUESS)
-    if("${YFRM_BINARY_ROOT_GUESS}" STREQUAL guess_android)
-        set(YFRM_BINARY_ROOT "${CMAKE_CURRENT_LIST_DIR}/_build/Android@${ANDROID_ABI}")
-        message(STATUS "Root guessed: ${YFRM_BINARY_ROOT}")
-    endif()
+    set(YFRM_BINARY_ROOT "${YFRM_BINARY_ROOT_GUESS}/Android@${ANDROID_ABI}")
+    message(STATUS "Root guessed: ${YFRM_BINARY_ROOT}")
 endif()
 
 # Tentative

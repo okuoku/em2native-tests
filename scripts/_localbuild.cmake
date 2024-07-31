@@ -168,6 +168,7 @@ function(genandroidpkg nam slot)
     set(YFRM_PKGID org.okotama.yuniframe.test.${pkgname})
     set(YFRM_SLOT ${slot})
     set(YFRM_PFJAVADIR "\"../../../integ/ext/platform/SDL2/android-project/app/src/main/java\"")
+    set(YFRM_BINARY_ROOT_GUESS "${buildroot}")
 
     foreach(r gradle template resources sdl2)
         foreach(e ${${r}-files})
