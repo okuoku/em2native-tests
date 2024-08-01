@@ -6,6 +6,9 @@ set(ndkversion 27.0.12077973)
 # Extract https://github.com/KhronosGroup/MoltenVK/releases/download/v1.2.10-rc2/MoltenVK-all.tar
 set(moltenvk_prefix "${CMAKE_CURRENT_LIST_DIR}/../_moltenvk/MoltenVK")
 
+# FIXME: Hardcode
+set(emcmake "/Volumes/stage/repos/emsdk/upstream/emscripten/emcmake")
+
 if(NOT PHASE)
     set(PHASE generate)
 endif()
@@ -83,6 +86,10 @@ set(apple_tv_variants # ANGLE does not support tvOS
     core:SDL2-PlatformGLES
     pkgXcode:SDL2-CWGL-Vulkan
     pkgXcode:SDL2-PlatformGLES)
+
+set(emscripten_variants
+    dep:SDL2
+    core:SDL2-PlatformGLES)
 
 function(build nam)
     foreach(cfg ${buildtypes})
@@ -259,12 +266,19 @@ function(gencmake nam proj platform abi slot)
         # Native Windows, Mac, ...
     endif()
 
+    if(${platform} STREQUAL Emscripten)
+        set(emcmake_prefix ${emcmake})
+    else()
+        set(emcmake_prefix)
+    endif()
+
     if(sysroot)
         message(STATUS "Configure ${nam} (${abi}, sysroot ${sysroot})")
     else()
         message(STATUS "Configure ${nam} (${abi})")
     endif()
     execute_process(COMMAND
+        ${emcmake_prefix}
         ${CMAKE_COMMAND} -G "${gen}"
         -S ${cmakeroot}
         -B ${buildroot}/${nam}
@@ -308,6 +322,8 @@ endif()
 
 # Host dispatch
 set(variants)
+
+# Add Android projects
 if(has_android_sdk)
     foreach(v ${android_variants})
         if(${v} MATCHES "^pkgAndroid")
@@ -317,6 +333,13 @@ if(has_android_sdk)
                 list(APPEND variants Android:${abi}:${v})
             endforeach()
         endif()
+    endforeach()
+endif()
+
+# Add Emscripten projects
+if(EXISTS ${emcmake})
+    foreach(v ${emscripten_variants})
+        list(APPEND variants Emscripten:Wasm32Web:${v})
     endforeach()
 endif()
 
