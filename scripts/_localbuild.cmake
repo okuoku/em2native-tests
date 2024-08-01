@@ -36,7 +36,8 @@ set(win_variants
     core:SDL2-PlatformGLES
     core:SDL2-ANGLE-DirectX11
     core:SDL2-ANGLE-Vulkan
-    core:SDL2-CWGL-Vulkan)
+    core:SDL2-CWGL-Vulkan
+    nccc:SDL2-ANGLE-DirectX11)
 
 set(winuwp_variants
     dep:ANGLE-DirectX11
@@ -54,7 +55,7 @@ set(posix_variants
     core:SDL2-PlatformGLES
     core:SDL2-CWGL-Vulkan
     #core:SDL2-ANGLE-Vulkan
-    )
+    nccc:SDL2-PlatformGLES)
 
 set(apple_variants
     dep:ANGLE-Metal
@@ -64,7 +65,8 @@ set(apple_variants
     core:SDL2-ANGLE-Metal
     core:SDL2-CWGL-Vulkan
     pkgXcode:SDL2-ANGLE-Metal
-    pkgXcode:SDL2-CWGL-Vulkan)
+    pkgXcode:SDL2-CWGL-Vulkan
+    nccc:SDL2-ANGLE-Metal)
 
 set(apple_mobile_variants
     dep:ANGLE-Metal
@@ -203,6 +205,12 @@ function(gencmake nam proj platform abi slot)
     if(${proj} STREQUAL core)
         set(cmakeroot ${root})
         set(buildtarget "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
+        set(deftype -DCMAKE_DEFAULT_BUILD_TYPE=Debug)
+        set(gen "Ninja Multi-Config")
+    elseif(${proj} STREQUAL nccc)
+        set(cmakeroot ${root})
+        set(buildtarget "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1"
+            "-DBUILD_NCCC_MODULE=1")
         set(deftype -DCMAKE_DEFAULT_BUILD_TYPE=Debug)
         set(gen "Ninja Multi-Config")
     elseif(${proj} STREQUAL dep)
@@ -386,6 +394,8 @@ foreach(v ${variants})
             set(is_cmake OFF)
         elseif(${proj} MATCHES "^pkg")
             set(nam pkg-${platform}${abi}@${slot})
+        elseif(${proj} STREQUAL "nccc")
+            set(nam nccc-${platform}${abi}@${slot})
         else()
             set(nam ${platform}${abi}@${slot})
         endif()

@@ -1,21 +1,33 @@
+#
+# INPUTs:
+#   BUILD_NCCC_MODULE: Build NCCC module
+#
+
 if(NOT TESTSLOT)
     message(FATAL_ERROR "Could not determine TESTSLOT")
 endif()
 
 # Guess binary root for Android Studio
 if(DEFINED YFRM_BINARY_ROOT_GUESS)
-    set(YFRM_BINARY_ROOT "${YFRM_BINARY_ROOT_GUESS}/Android@${ANDROID_ABI}")
-    message(STATUS "Root guessed: ${YFRM_BINARY_ROOT}")
+    if(ANDROID_ABI)
+        set(YFRM_BINARY_ROOT "${YFRM_BINARY_ROOT_GUESS}/Android@${ANDROID_ABI}")
+        message(STATUS "Root guessed: ${YFRM_BINARY_ROOT}")
+    else()
+        message(FATAL_ERROR "We cannot guess binary root with this platform.")
+    endif()
 endif()
 
-# Tentative
-cmake_minimum_required(VERSION 3.12)
+if(APPLE AND NOT CMAKE_TOOLCHAIN_FILE)
+    # We might link against .xcframeworks
+    cmake_minimum_required(VERSION 3.28)
+else()
+    cmake_minimum_required(VERSION 3.12)
+endif()
 project(yuniframe-tests NONE)
 
 enable_testing()
 
 # Setup
-
 if(NOT YFRM_BINARY_ROOT)
     set(YFRM_SDL2_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_yfrm_headers)
 else()
@@ -77,6 +89,9 @@ else()
 endif()
 
 # Libs
+if(BUILD_NCCC_MODULE)
+    set(YFRM_BUILD_MODULE ON)
+endif()
 set(NCCC_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/nccc)
 set(CWGL_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/cwgl)
 set(VOLK_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/volk)
@@ -87,15 +102,19 @@ set(VULKAN_HEADERS_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/Vulkan-Headers)
 add_subdirectory(integ/cwgl cwgl)
 add_subdirectory(integ/yuniframe yfrm) # Module
 
-# Ribbon
-if(NOT TESTPKG)
-    set(YUNI_SKIP_TESTS ON)
-    set(RIBBON_SKIP_TESTS ON)
-    set(USE_RIBBON_PREBOOT ON)
-    add_subdirectory(ribbon-integ)
+if(BUILD_NCCC_MODULE)
+    # BUILD_NCCC_MODULE will be consumed in yfrm
+else()
+    # Build ribbon (Unused for now)
+    if(NOT TESTPKG)
+        set(YUNI_SKIP_TESTS ON)
+        set(RIBBON_SKIP_TESTS ON)
+        set(USE_RIBBON_PREBOOT ON)
+        add_subdirectory(ribbon-integ)
+    endif()
+    # Build test dummy
+    add_subdirectory(native/imgui test-imgui)
 endif()
 
-# Apps
-add_subdirectory(native/imgui test-imgui)
 
 message(STATUS "TESTSLOT: ${TESTSLOT}")
