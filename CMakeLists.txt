@@ -83,9 +83,10 @@ endif()
 add_subdirectory(integ/proj/sdl2 sdl2)
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL WindowsStore OR EMSCRIPTEN)
-    # FIXME:
+    # FIXME: miniio backend 
 else()
     add_subdirectory(proj/uv uv)
+    set(UV_ROOT ${CMAKE_CURRENT_LIST_DIR}/ext/platform/libuv)
 endif()
 
 # Libs
@@ -101,6 +102,7 @@ set(GLSLANG_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/glslang)
 set(VULKAN_HEADERS_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/Vulkan-Headers)
 add_subdirectory(integ/cwgl cwgl)
 add_subdirectory(integ/yuniframe yfrm) # Module
+add_subdirectory(miniio/nccc miniio)
 
 if(BUILD_NCCC_MODULE)
     # BUILD_NCCC_MODULE will be consumed in yfrm
