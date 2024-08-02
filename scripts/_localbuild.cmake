@@ -42,19 +42,18 @@ set(win_variants
 set(winuwp_variants
     dep:ANGLE-DirectX11
     dep:SDL2
-    # dep:GLSLang
     core:SDL2-ANGLE-DirectX11
     pkgUWP:SDL2-ANGLE-DirectX11)
 
 set(posix_variants
     # Assume Mesa and it provides both GLES and Vulkan
-    #dep:ANGLE-Vulkan ## FIXME: Needs patch..?
+    dep:ANGLE-Vulkan
     dep:SDL2
     dep:GLSLang
     dep:UV
     core:SDL2-PlatformGLES
     core:SDL2-CWGL-Vulkan
-    #core:SDL2-ANGLE-Vulkan
+    core:SDL2-ANGLE-Vulkan
     nccc:SDL2-PlatformGLES)
 
 set(apple_variants
