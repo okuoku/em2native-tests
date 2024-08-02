@@ -92,6 +92,7 @@ endif()
 # Libs
 if(BUILD_NCCC_MODULE)
     set(YFRM_BUILD_MODULE ON)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 set(NCCC_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/nccc)
 set(CWGL_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/cwgl)

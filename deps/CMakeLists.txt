@@ -9,6 +9,8 @@ endif()
 
 set(YFRM_SUBPROJECT_BUILD ON)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Merge with main buildfile..?
 if(TGT STREQUAL "ANGLE-Vulkan")
     set(YFRM_CWGL_USE_ANGLE ON)
