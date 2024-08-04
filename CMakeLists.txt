@@ -104,9 +104,29 @@ set(VULKAN_HEADERS_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/Vulkan-Headers)
 add_subdirectory(integ/cwgl cwgl)
 add_subdirectory(integ/yuniframe yfrm) # Module
 add_subdirectory(miniio/nccc miniio)
+add_subdirectory(integ/nccc/tests nccc-tests)
+
+# NCCC module targets
+set(mods
+    nccc_yfrm
+    nccc_miniio
+    nccc_tests_nccc)
 
 if(BUILD_NCCC_MODULE)
-    # BUILD_NCCC_MODULE will be consumed in yfrm
+    # Deploy nccc modules to ${CMAKE_CURRENT_BINARY_DIR}/nccc
+    set(debugloc ${CMAKE_CURRENT_BINARY_DIR}/nccc) # Prefer debug build now
+    set(releaseloc ${CMAKE_CURRENT_BINARY_DIR}/nccc/release)
+    set(dest "$<IF:$<CONFIG:Debug>,${debugloc},${releaseloc}>")
+    file(MAKE_DIRECTORY ${debugloc})
+    file(MAKE_DIRECTORY ${releaseloc})
+    foreach(tgt ${mods})
+        add_custom_target(deploymod-${tgt} ALL
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${dest}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:${tgt}> ${dest}/
+            DEPENDS ${tgt}
+            )
+    endforeach()
 else()
     # Build ribbon (Unused for now)
     if(NOT TESTPKG)
@@ -118,6 +138,5 @@ else()
     # Build test dummy
     add_subdirectory(native/imgui test-imgui)
 endif()
-
 
 message(STATUS "TESTSLOT: ${TESTSLOT}")
