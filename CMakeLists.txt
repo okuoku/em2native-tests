@@ -121,7 +121,6 @@ if(BUILD_NCCC_MODULE)
     file(MAKE_DIRECTORY ${releaseloc})
     foreach(tgt ${mods})
         add_custom_target(deploymod-${tgt} ALL
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${dest}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${tgt}> ${dest}/
             DEPENDS ${tgt}
