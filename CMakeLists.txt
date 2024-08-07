@@ -101,8 +101,10 @@ set(SPIRV_TOOLS_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/SPIRV-Tools)
 set(SPIRV_CROSS_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/SPIRV-Cross)
 set(GLSLANG_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/glslang)
 set(VULKAN_HEADERS_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/Vulkan-Headers)
+
+# NCCC Modules
 add_subdirectory(integ/cwgl cwgl)
-add_subdirectory(integ/yuniframe yfrm) # Module
+add_subdirectory(integ/yuniframe yfrm)
 add_subdirectory(miniio/nccc miniio)
 add_subdirectory(integ/nccc/tests nccc-tests)
 
@@ -126,6 +128,15 @@ if(BUILD_NCCC_MODULE)
             DEPENDS ${tgt}
             )
     endforeach()
+    if(EXISTS /opt/yunibase)
+        set(YUNI_WITH_YUNIBASE /opt/yunibase)
+    elseif(EXISTS c:/yunibase)
+        set(YUNI_WITH_YUNIBASE c:/yunibase)
+    endif()
+    # FIXME: Support single-config generator
+    set(YUNI_INPLACE_NCCC_MODULES_PREFIX "${debugloc}")
+    # Build yuni only for now
+    add_subdirectory(ribbon-integ/yuni yuni)
 else()
     # Build ribbon (Unused for now)
     if(NOT TESTPKG)
