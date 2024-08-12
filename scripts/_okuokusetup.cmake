@@ -11,11 +11,15 @@ set(mysubmodules
     ribbon-integ/yuni
     ribbon-integ/yuniribbit-proto
     miniio
+    mediatools
     )
 
+set(rename_integ em2native-integ)
+set(rename_mediatools nccc_mediatools)
+
 foreach(e ${mysubmodules})
-    if(e STREQUAL integ)
-        set(url "git@github.com:okuoku/em2native-integ")
+    if(rename_${e})
+        set(url "git@github.com:okuoku/${rename_${e}}")
     else()
         get_filename_component(nam "${e}" NAME)
         set(url "git@github.com:okuoku/${nam}")

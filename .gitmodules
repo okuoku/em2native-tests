@@ -16,3 +16,9 @@
 [submodule "miniio"]
 	path = miniio
 	url = https://github.com/okuoku/miniio
+[submodule "ext/rsrc/morisawa-biz-ud-gothic"]
+	path = ext/rsrc/morisawa-biz-ud-gothic
+	url = https://github.com/googlefonts/morisawa-biz-ud-gothic
+[submodule "mediatools"]
+	path = mediatools
+	url = https://github.com/okuoku/nccc_mediatools
