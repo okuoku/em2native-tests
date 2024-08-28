@@ -106,13 +106,15 @@ set(VULKAN_HEADERS_ROOT ${CMAKE_CURRENT_LIST_DIR}/integ/ext/cwgl/Vulkan-Headers)
 add_subdirectory(integ/cwgl cwgl)
 add_subdirectory(integ/yuniframe yfrm)
 add_subdirectory(miniio/nccc miniio)
+add_subdirectory(integ/nccc/stubsupport nccc-stubsupport)
 add_subdirectory(integ/nccc/tests nccc-tests)
 
 # NCCC module targets
 set(mods
     nccc_yfrm
     nccc_miniio
-    nccc_tests_nccc)
+    nccc_tests_nccc
+    nccc_nccc_corelib)
 
 if(BUILD_NCCC_MODULE)
     # Deploy nccc modules to ${CMAKE_CURRENT_BINARY_DIR}/nccc

@@ -16,7 +16,7 @@
 
 (define (func-realize lib sym)
   (define str (symbol->string sym))
-  (let ((func (hashtable-ref lib str #f)))
+  (let ((func (cdr (hashtable-ref lib str #f))))
    (lambda x (apply func callctx x))))
 
 (define-syntax def-funcs
@@ -30,6 +30,7 @@
            yfrm_terminate
            yfrm_cwgl_ctx_create
            yfrm_query0
+           yfrm_wait0
            yfrm_frame_begin0
            yfrm_frame_end0)
 
@@ -49,6 +50,7 @@
   (yfrm_frame_end0 ctx))
 
 (define (step ctx)
+  (yfrm_wait0 0)
   (let ((r (yfrm_query0 0 evq (* 4 256))))
    (write (list 'EVENT: r)) (newline)
    (set! cur (+ 0.05 cur))
@@ -59,7 +61,7 @@
    (step ctx)))
 
 (let* ((initr (yfrm_init))
-       (ctx-cwgl (yfrm_cwgl_ctx_create 1280 720 0 0)))
+       (ctx-cwgl (yfrm_cwgl_ctx_create 1280 720 0 1)))
   (cwgl_viewport ctx-cwgl 0 0 1280 720)
   (step ctx-cwgl))
 
