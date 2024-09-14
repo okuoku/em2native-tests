@@ -90,6 +90,7 @@ set(apple_tv_variants # ANGLE does not support tvOS
 
 set(emscripten_variants
     dep:SDL2
+    #core:Native-PlatformGLES
     core:SDL2-PlatformGLES)
 
 function(build nam)
