@@ -38,7 +38,7 @@ target_link_libraries(${apptgt} PRIVATE
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL WindowsStore)
     set(rtmain 
-        ../../integ/yuniframe/platform/src-sdl2/winrt/SDL2_winrt_main_NonXAML.cpp)
+        ../../integ/yuniframe/src-sdl2/winrt/SDL2_winrt_main_NonXAML.cpp)
     target_sources(${apptgt} PRIVATE ${rtmain})
     set_source_files_properties(${rtmain}
         PROPERTIES COMPILE_FLAGS "/ZW")
