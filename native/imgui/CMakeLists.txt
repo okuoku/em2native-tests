@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.12)
 project(test-imgui CXX)
 
+# Toolchain ABI setup
+if(EMSCRIPTEN)
+    add_compile_options(-pthread)
+endif()
+
 include_directories(imgui)
 
 # => backendlibs
@@ -25,6 +30,14 @@ if(ANDROID)
     set(apptgt test-imgui-so)
     add_library(${apptgt} SHARED
         dummy.cpp)
+elseif(EMSCRIPTEN)
+    set(apptgt test-imgui-so)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    
+    add_executable(${apptgt} dummy.cpp)
+    set_target_properties(${apptgt}
+        PROPERTIES
+        LINK_OPTIONS "-pthread;-sPROXY_TO_PTHREAD")
 else()
     set(apptgt test-imgui-app)
     add_executable(${apptgt} WIN32

@@ -3,6 +3,11 @@ project(yfrm-deps NONE)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../integ/proj/projwrap.cmake)
 
+# Toolchain ABI setup
+if(EMSCRIPTEN)
+    add_compile_options(-pthread)
+endif()
+
 if(NOT TGT)
     message(FATAL_ERROR "TGT is required")
 endif()

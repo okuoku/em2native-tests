@@ -27,6 +27,11 @@ project(yuniframe-tests NONE)
 
 enable_testing()
 
+# Toolchain ABI setup
+if(EMSCRIPTEN)
+    add_compile_options(-pthread)
+endif()
+
 # Setup
 if(NOT YFRM_BINARY_ROOT)
     set(YFRM_SDL2_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/_yfrm_headers)
