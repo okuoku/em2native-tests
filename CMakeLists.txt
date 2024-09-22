@@ -164,7 +164,8 @@ else()
         add_subdirectory(ribbon-integ)
     endif()
     # Build test dummy
-    add_subdirectory(native/imgui test-imgui)
+    #add_subdirectory(native/imgui test-imgui)
+    add_subdirectory(native/nanovg test-nanovg)
 endif()
 
 message(STATUS "TESTSLOT: ${TESTSLOT}")

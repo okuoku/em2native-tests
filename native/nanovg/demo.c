@@ -1,21 +1,12 @@
+// Yuniframe version
+
 #include "demo.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#ifdef NANOVG_GLEW
-#  include <GL/glew.h>
-#endif
-#include <GLFW/glfw3.h>
 #include "nanovg.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-
-
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#elif !defined(__MINGW32__)
-#include <iconv.h>
-#endif
 
 #define ICON_SEARCH 0x1F50D
 #define ICON_CIRCLED_CROSS 0x2716
@@ -802,6 +793,8 @@ void drawLines(NVGcontext* vg, float x, float y, float w, float h, float t)
 	nvgRestore(vg);
 }
 
+#define DEMOROOT "/Users/okuoku/stage/em2native-tests/native/nanovg/nanovg/"
+
 int loadDemoData(NVGcontext* vg, DemoData* data)
 {
 	int i;
@@ -811,7 +804,7 @@ int loadDemoData(NVGcontext* vg, DemoData* data)
 
 	for (i = 0; i < 12; i++) {
 		char file[128];
-		snprintf(file, 128, "../example/images/image%d.jpg", i+1);
+		snprintf(file, 128, DEMOROOT "example/images/image%d.jpg", i+1);
 		data->images[i] = nvgCreateImage(vg, file, 0);
 		if (data->images[i] == 0) {
 			printf("Could not load %s.\n", file);
@@ -819,22 +812,22 @@ int loadDemoData(NVGcontext* vg, DemoData* data)
 		}
 	}
 
-	data->fontIcons = nvgCreateFont(vg, "icons", "../example/entypo.ttf");
+	data->fontIcons = nvgCreateFont(vg, "icons", DEMOROOT "example/entypo.ttf");
 	if (data->fontIcons == -1) {
 		printf("Could not add font icons.\n");
 		return -1;
 	}
-	data->fontNormal = nvgCreateFont(vg, "sans", "../example/Roboto-Regular.ttf");
+	data->fontNormal = nvgCreateFont(vg, "sans", DEMOROOT "example/Roboto-Regular.ttf");
 	if (data->fontNormal == -1) {
 		printf("Could not add font italic.\n");
 		return -1;
 	}
-	data->fontBold = nvgCreateFont(vg, "sans-bold", "../example/Roboto-Bold.ttf");
+	data->fontBold = nvgCreateFont(vg, "sans-bold", DEMOROOT "example/Roboto-Bold.ttf");
 	if (data->fontBold == -1) {
 		printf("Could not add font bold.\n");
 		return -1;
 	}
-	data->fontEmoji = nvgCreateFont(vg, "emoji", "../example/NotoEmoji-Regular.ttf");
+	data->fontEmoji = nvgCreateFont(vg, "emoji", DEMOROOT "example/NotoEmoji-Regular.ttf");
 	if (data->fontEmoji == -1) {
 		printf("Could not add font emoji.\n");
 		return -1;
@@ -1214,6 +1207,7 @@ static void flipHorizontal(unsigned char* image, int w, int h, int stride)
 
 void saveScreenShot(int w, int h, int premult, const char* name)
 {
+#if 0
 	unsigned char* image = (unsigned char*)malloc(w*h*4);
 	if (image == NULL)
 		return;
@@ -1225,4 +1219,5 @@ void saveScreenShot(int w, int h, int premult, const char* name)
 	flipHorizontal(image, w, h, w*4);
  	stbi_write_png(name, w, h, 4, image, w*4);
  	free(image);
+#endif
 }

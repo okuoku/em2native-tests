@@ -1,3 +1,5 @@
+// Yuniframe version
+
 //
 // Copyright (c) 2013 Mikko Mononen memon@inside.org
 //
@@ -16,27 +18,20 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
+#include <yuniframe/yfrm.h>
 #include <stdio.h>
-#define GLFW_INCLUDE_ES2
-#define GLFW_INCLUDE_GLEXT
-#include <GLFW/glfw3.h>
 #include "nanovg.h"
-#define NANOVG_GLES2_IMPLEMENTATION
-#include "nanovg_gl.h"
-#include "nanovg_gl_utils.h"
+#define NANOVG_CWGL_IMPLEMENTATION
+#include "nanovg_cwgl.h"
+//#include "nanovg_gl_utils.h"
 #include "demo.h"
-#include "perf.h"
-
-
-void errorcb(int error, const char* desc)
-{
-	printf("GLFW error %d: %s\n", error, desc);
-}
+//#include "perf.h"
 
 int blowup = 0;
 int screenshot = 0;
 int premult = 0;
 
+#if 0
 static void key(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	NVG_NOTUSED(scancode);
@@ -50,40 +45,22 @@ static void key(GLFWwindow* window, int key, int scancode, int action, int mods)
 	if (key == GLFW_KEY_P && action == GLFW_PRESS)
 		premult = !premult;
 }
+#endif
 
-int main()
+int YFRM_ENTRYPOINT(int ac, char** av)
 {
-	GLFWwindow* window;
 	DemoData data;
 	NVGcontext* vg = NULL;
-	PerfGraph fps;
+	//PerfGraph fps;
 	double prevt = 0;
+        uint64_t frm;
+        cwgl_ctx_t* ctx;
 
-	if (!glfwInit()) {
-		printf("Failed to init GLFW.");
-		return -1;
-	}
+	//initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");
 
-	initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");
-
-	glfwSetErrorCallback(errorcb);
-
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-
-	window = glfwCreateWindow(1000, 600, "NanoVG", NULL, NULL);
-//	window = glfwCreateWindow(1000, 600, "NanoVG", glfwGetPrimaryMonitor(), NULL);
-	if (!window) {
-		glfwTerminate();
-		return -1;
-	}
-
-	glfwSetKeyCallback(window, key);
-
-	glfwMakeContextCurrent(window);
-
-	vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+        ctx = yfrm_cwgl_ctx_create(1280,720,0,0);
+        yfrm_frame_begin0(ctx); // Initial frame
+	vg = nvgCreateCWGL(ctx, NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
 	if (vg == NULL) {
 		printf("Could not init nanovg.\n");
 		return -1;
@@ -92,46 +69,60 @@ int main()
 	if (loadDemoData(vg, &data) == -1)
 		return -1;
 
-	glfwSwapInterval(0);
+	prevt = 0.0; // FIXME: prev time
+        frm = 0;
+        yfrm_frame_end0(ctx); // Initial frame
 
-	glfwSetTime(0);
-	prevt = glfwGetTime();
-
-	while (!glfwWindowShouldClose(window))
+	while (1)
 	{
 		double mx, my, t, dt;
 		int winWidth, winHeight;
 		int fbWidth, fbHeight;
 		float pxRatio;
 
-		t = glfwGetTime();
-		dt = t - prevt;
-		prevt = t;
-		updateGraph(&fps, dt);
+                yfrm_frame_begin0(ctx);
+                // Consume events
+                {
+                    int events;
+                    int buf[128];
+                    for(;;){
+                        events = yfrm_query0(0, buf, 128);
+                        if(events == 0){
+                            break;
+                        }
+                    }
+                    
+                }
 
-		glfwGetCursorPos(window, &mx, &my);
-		glfwGetWindowSize(window, &winWidth, &winHeight);
-		glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+		t = 0;
+		dt = 100; // FIXME: delta
+		prevt = t;
+		//updateGraph(&fps, dt);
+
+                mx = 0;
+                my = 0; // FIXME: mouse
+                fbWidth = 1280;
+                fbHeight = 720;
 		// Calculate pixel ration for hi-dpi devices.
 		pxRatio = (float)fbWidth / (float)winWidth;
 
 		// Update and render
-		glViewport(0, 0, fbWidth, fbHeight);
+		cwgl_viewport(ctx, 0, 0, fbWidth, fbHeight);
 		if (premult)
-			glClearColor(0,0,0,0);
+			cwgl_clearColor(ctx, 0,0,0,0);
 		else
-			glClearColor(0.3f, 0.3f, 0.32f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+			cwgl_clearColor(ctx, 0.3f, 0.3f, 0.32f, 1.0f);
+		cwgl_clear(ctx, COLOR_BUFFER_BIT|DEPTH_BUFFER_BIT|STENCIL_BUFFER_BIT);
 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
+		cwgl_enable(ctx, BLEND);
+		cwgl_blendFunc(ctx, SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+		cwgl_enable(ctx, CULL_FACE);
+		cwgl_disable(ctx, DEPTH_TEST);
 
 		nvgBeginFrame(vg, winWidth, winHeight, pxRatio);
 
 		renderDemo(vg, mx,my, winWidth,winHeight, t, blowup, &data);
-		renderGraph(vg, 5,5, &fps);
+		//renderGraph(vg, 5,5, &fps);
 
 		nvgEndFrame(vg);
 
@@ -140,16 +131,13 @@ int main()
 			saveScreenShot(fbWidth, fbHeight, premult, "dump.png");
 		}
 		
-		glEnable(GL_DEPTH_TEST);
+		cwgl_enable(ctx, DEPTH_TEST);
 
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+                yfrm_frame_end0(ctx);
 	}
 
 	freeDemoData(vg, &data);
 
-	nvgDeleteGLES2(vg);
-
-	glfwTerminate();
+	nvgDeleteCWGL(vg);
 	return 0;
 }
