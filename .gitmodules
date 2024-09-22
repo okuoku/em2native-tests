@@ -22,3 +22,6 @@
 [submodule "mediatools"]
 	path = mediatools
 	url = https://github.com/okuoku/nccc_mediatools
+[submodule "native/nanovg/nanovg"]
+	path = native/nanovg/nanovg
+	url = https://github.com/memononen/nanovg
