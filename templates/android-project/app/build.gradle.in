@@ -22,7 +22,7 @@ android {
         externalNativeBuild {
             cmake {
                 arguments "-DYFRM_WITH_PREBUILT_LIBS=1", "-DYFRM_BINARY_ROOT_GUESS=@YFRM_BINARY_ROOT_GUESS@", "-DTESTSLOT=@YFRM_SLOT@"
-                targets "test-imgui-so"
+                targets "test-nanovg-app"
             }
         }
 
