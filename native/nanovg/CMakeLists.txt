@@ -8,6 +8,10 @@ if(EMSCRIPTEN)
     add_compile_options(-pthread)
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL WindowsStore)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 include_directories(nanovg/src nanovg/example)
 
 # => backendlibs
