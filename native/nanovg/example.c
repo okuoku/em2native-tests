@@ -94,8 +94,8 @@ int YFRM_ENTRYPOINT(int ac, char** av)
                     
                 }
 
-		t = 0;
-		dt = 100; // FIXME: delta
+		t = 1 * frm;
+		dt = 1; // FIXME: delta
 		prevt = t;
 		//updateGraph(&fps, dt);
 
@@ -103,6 +103,8 @@ int YFRM_ENTRYPOINT(int ac, char** av)
                 my = 0; // FIXME: mouse
                 fbWidth = 1280;
                 fbHeight = 720;
+                winWidth = 1280;
+                winHeight = 720;
 		// Calculate pixel ration for hi-dpi devices.
 		pxRatio = (float)fbWidth / (float)winWidth;
 
@@ -134,6 +136,7 @@ int YFRM_ENTRYPOINT(int ac, char** av)
 		cwgl_enable(ctx, DEPTH_TEST);
 
                 yfrm_frame_end0(ctx);
+                frm++;
 	}
 
 	freeDemoData(vg, &data);
