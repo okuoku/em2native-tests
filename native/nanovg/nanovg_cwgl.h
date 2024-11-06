@@ -45,11 +45,11 @@ enum NVGcreateFlags {
 // Creates NanoVG contexts for different OpenGL (ES) versions.
 // Flags should be combination of the create flags above.
 
-NVGcontext* nvgCreateCWGL(cwgl_ctx_t* ctx, int flags);
+NVGcontext* nvgCreateCWGL(cwgl_ctx* ctx, int flags);
 void nvgDeleteCWGL(NVGcontext* ctx);
 
-int nvglCreateImageFromHandleCWGL(NVGcontext* ctx, cwgl_Texture_t* textureId, int w, int h, int flags);
-cwgl_Texture_t* nvglImageHandleCWGL(NVGcontext* ctx, int image);
+int nvglCreateImageFromHandleCWGL(NVGcontext* ctx, cwgl_Texture* textureId, int w, int h, int flags);
+cwgl_Texture* nvglImageHandleCWGL(NVGcontext* ctx, int image);
 
 // These are additional flags on top of NVGimageFlags.
 enum NVGimageFlagsGL {
@@ -85,16 +85,16 @@ enum GLNVGshaderType {
 };
 
 struct GLNVGshader {
-	cwgl_Program_t* prog;
-	cwgl_Shader_t* frag;
-	cwgl_Shader_t* vert;
-	cwgl_UniformLocation_t* loc[GLNVG_MAX_LOCS];
+	cwgl_Program* prog;
+	cwgl_Shader* frag;
+	cwgl_Shader* vert;
+	cwgl_UniformLocation* loc[GLNVG_MAX_LOCS];
 };
 typedef struct GLNVGshader GLNVGshader;
 
 struct GLNVGtexture {
 	int id;
-	cwgl_Texture_t* tex;
+	cwgl_Texture* tex;
 	int width, height;
 	int type;
 	int flags;
@@ -103,10 +103,10 @@ typedef struct GLNVGtexture GLNVGtexture;
 
 struct GLNVGblend
 {
-	cwgl_enum_t srcRGB;
-	cwgl_enum_t dstRGB;
-	cwgl_enum_t srcAlpha;
-	cwgl_enum_t dstAlpha;
+	cwgl_enum srcRGB;
+	cwgl_enum dstRGB;
+	cwgl_enum srcAlpha;
+	cwgl_enum dstAlpha;
 };
 typedef struct GLNVGblend GLNVGblend;
 
@@ -164,14 +164,14 @@ struct GLNVGfragUniforms {
 typedef struct GLNVGfragUniforms GLNVGfragUniforms;
 
 struct GLNVGcontext {
-    cwgl_ctx_t* ctx;
+    cwgl_ctx* ctx;
 	GLNVGshader shader;
 	GLNVGtexture* textures;
 	float view[2];
 	int ntextures;
 	int ctextures;
 	int textureId;
-	cwgl_Buffer_t* vertBuf;
+	cwgl_Buffer* vertBuf;
 	int fragSize;
 	int flags;
 
@@ -190,9 +190,9 @@ struct GLNVGcontext {
 	int nuniforms;
 
 	// cached state
-	cwgl_Texture_t* boundTexture;
+	cwgl_Texture* boundTexture;
 	uint32_t stencilMask;
-	cwgl_enum_t stencilFunc;
+	cwgl_enum stencilFunc;
 	int32_t stencilFuncRef;
 	uint32_t stencilFuncMask;
 	GLNVGblend blendFunc;
@@ -215,7 +215,7 @@ static unsigned int glnvg__nearestPow2(unsigned int num)
 	return n;
 }
 
-static void glnvg__bindTexture(GLNVGcontext* gl, cwgl_Texture_t* tex)
+static void glnvg__bindTexture(GLNVGcontext* gl, cwgl_Texture* tex)
 {
 	if (gl->boundTexture != tex) {
 		gl->boundTexture = tex;
@@ -231,7 +231,7 @@ static void glnvg__stencilMask(GLNVGcontext* gl, uint32_t mask)
 	}
 }
 
-static void glnvg__stencilFunc(GLNVGcontext* gl, cwgl_enum_t func, int32_t ref, uint32_t mask)
+static void glnvg__stencilFunc(GLNVGcontext* gl, cwgl_enum func, int32_t ref, uint32_t mask)
 {
 	if ((gl->stencilFunc != func) ||
 		(gl->stencilFuncRef != ref) ||
@@ -307,11 +307,11 @@ static int glnvg__deleteTexture(GLNVGcontext* gl, int id)
 	return 0;
 }
 
-static void glnvg__dumpShaderError(GLNVGcontext* gl, cwgl_Shader_t* shader, const char* name, const char* type)
+static void glnvg__dumpShaderError(GLNVGcontext* gl, cwgl_Shader* shader, const char* name, const char* type)
 {
 	char str[512+1];
 	size_t len = 0;
-        cwgl_string_t* xstr;
+        cwgl_string* xstr;
 	xstr = cwgl_getShaderInfoLog(gl->ctx, shader);
         cwgl_string_read(gl->ctx, xstr, str, 512);
         len = cwgl_string_size(gl->ctx, xstr);
@@ -321,11 +321,11 @@ static void glnvg__dumpShaderError(GLNVGcontext* gl, cwgl_Shader_t* shader, cons
         cwgl_string_release(gl->ctx, xstr);
 }
 
-static void glnvg__dumpProgramError(GLNVGcontext* gl, cwgl_Program_t* prog, const char* name)
+static void glnvg__dumpProgramError(GLNVGcontext* gl, cwgl_Program* prog, const char* name)
 {
 	char str[512+1];
 	size_t len = 0;
-        cwgl_string_t* xstr;
+        cwgl_string* xstr;
 	xstr = cwgl_getProgramInfoLog(gl->ctx, prog);
         cwgl_string_read(gl->ctx, xstr, str, 512);
         len = cwgl_string_size(gl->ctx, xstr);
@@ -337,7 +337,7 @@ static void glnvg__dumpProgramError(GLNVGcontext* gl, cwgl_Program_t* prog, cons
 
 static void glnvg__checkError(GLNVGcontext* gl, const char* str)
 {
-	cwgl_enum_t err;
+	cwgl_enum err;
 	if ((gl->flags & NVG_DEBUG) == 0) return;
 	err = cwgl_getError(gl->ctx);
 	if (err != NO_ERROR) {
@@ -349,8 +349,8 @@ static void glnvg__checkError(GLNVGcontext* gl, const char* str)
 static int glnvg__createShader(GLNVGcontext* gl, GLNVGshader* shader, const char* name, const char* vshader, const char* fshader)
 {
 	int32_t status;
-	cwgl_Program_t* prog;
-	cwgl_Shader_t *vert, *frag;
+	cwgl_Program* prog;
+	cwgl_Shader *vert, *frag;
 
 	memset(shader, 0, sizeof(*shader));
 
@@ -976,7 +976,7 @@ static void glnvg__renderCancel(void* uptr) {
 	gl->nuniforms = 0;
 }
 
-static cwgl_enum_t glnvg_convertBlendFuncFactor(int factor)
+static cwgl_enum glnvg_convertBlendFuncFactor(int factor)
 {
 	if (factor == NVG_ZERO)
 		return ZERO;
@@ -1380,7 +1380,7 @@ static void glnvg__renderDelete(void* uptr)
 }
 
 
-NVGcontext* nvgCreateCWGL(cwgl_ctx_t* gctx, int flags)
+NVGcontext* nvgCreateCWGL(cwgl_ctx* gctx, int flags)
 {
 	NVGparams params;
 	NVGcontext* ctx = NULL;
@@ -1423,7 +1423,7 @@ void nvgDeleteCWGL(NVGcontext* ctx)
 	nvgDeleteInternal(ctx);
 }
 
-int nvglCreateImageFromHandleCWGL(NVGcontext* ctx, cwgl_Texture_t* textureId, int w, int h, int imageFlags)
+int nvglCreateImageFromHandleCWGL(NVGcontext* ctx, cwgl_Texture* textureId, int w, int h, int imageFlags)
 {
 	GLNVGcontext* gl = (GLNVGcontext*)nvgInternalParams(ctx)->userPtr;
 	GLNVGtexture* tex = glnvg__allocTexture(gl);
@@ -1439,7 +1439,7 @@ int nvglCreateImageFromHandleCWGL(NVGcontext* ctx, cwgl_Texture_t* textureId, in
 	return tex->id;
 }
 
-cwgl_Texture_t* nvglImageHandleCWGL(NVGcontext* ctx, int image)
+cwgl_Texture* nvglImageHandleCWGL(NVGcontext* ctx, int image)
 {
 	GLNVGcontext* gl = (GLNVGcontext*)nvgInternalParams(ctx)->userPtr;
 	GLNVGtexture* tex = glnvg__findTexture(gl, image);
