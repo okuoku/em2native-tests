@@ -22,9 +22,11 @@ set(android_variants
     dep:UV
     core:SDL2-PlatformGLES
     core:SDL2-CWGL-Vulkan
+    core:SDL2-CWGL-GLES
     core:SDL2-ANGLE-Vulkan
     pkgAndroid:SDL2-PlatformGLES
     pkgAndroid:SDL2-CWGL-Vulkan
+    pkgAndroid:SDL2-CWGL-GLES
     pkgAndroid:SDL2-ANGLE-Vulkan)
 
 set(win_variants
