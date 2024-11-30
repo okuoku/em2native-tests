@@ -5,18 +5,18 @@
 #include "imgui.h"
 
 /* Global Objects */
-cwgl_ctx_t* g_ctx = 0;
-cwgl_Texture_t* g_FontTexture;
-cwgl_Program_t* g_ShaderHandle;
-cwgl_Shader_t* g_VertHandle;
-cwgl_Shader_t* g_FragHandle;
-cwgl_UniformLocation_t* g_AttribLocationTex;
-cwgl_UniformLocation_t* g_AttribLocationProjMtx;
+cwgl_ctx* g_ctx = 0;
+cwgl_Texture* g_FontTexture;
+cwgl_Program* g_ShaderHandle;
+cwgl_Shader* g_VertHandle;
+cwgl_Shader* g_FragHandle;
+cwgl_UniformLocation* g_AttribLocationTex;
+cwgl_UniformLocation* g_AttribLocationProjMtx;
 int32_t g_AttribLocationVtxPos;
 int32_t g_AttribLocationVtxUV;
 int32_t g_AttribLocationVtxColor;
-cwgl_Buffer_t* g_VboHandle;
-cwgl_Buffer_t* g_ElementsHandle;
+cwgl_Buffer* g_VboHandle;
+cwgl_Buffer* g_ElementsHandle;
 
 /* Shaders */
 static const char shader_vert[] =
@@ -46,7 +46,7 @@ static const char shader_frag[] =
 "}\n";
 
 bool
-ImGui_ImplCwgl_Init(cwgl_ctx_t* ctx){
+ImGui_ImplCwgl_Init(cwgl_ctx* ctx){
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = "cwgl";
     g_ctx = ctx;
@@ -201,7 +201,7 @@ ImGui_ImplCwgl_RenderDrawData(ImDrawData* draw_data){
                     cwgl_scissor(g_ctx, clip_rect.x, fb_height - clip_rect.w,
                                  clip_rect.z - clip_rect.x, clip_rect.w - clip_rect.y);
                     cwgl_bindTexture(g_ctx, TEXTURE_2D,
-                                     (cwgl_Texture_t*)(intptr_t)pcmd->TextureId);
+                                     (cwgl_Texture*)(intptr_t)pcmd->TextureId);
 
                     cwgl_drawElements(g_ctx, TRIANGLES, pcmd->ElemCount,
                                       sizeof(ImDrawIdx) == 2 ? UNSIGNED_SHORT : UNSIGNED_INT,

@@ -19,8 +19,7 @@ set(apps_webgl2
     app:WebGL2:nanovg)
 set(apps_webgl1
     app:WebGL1:nanovg
-    #app:WebGL1:imgui
-    )
+    app:WebGL1:imgui)
 set(apps_all
     ${apps_webgl1}
     ${apps_webgl2})
