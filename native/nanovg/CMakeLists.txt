@@ -26,32 +26,32 @@ target_link_libraries(test-nanovg
     PUBLIC yfrm cwgl)
 
 if(ANDROID)
-    add_library(test-nanovg-app SHARED
+    add_library(app-nanovg SHARED
         dummy.cpp)
 elseif(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
     
-    add_executable(test-nanovg-app dummy.cpp)
-    set_target_properties(test-nanovg-app
+    add_executable(app-nanovg dummy.cpp)
+    set_target_properties(app-nanovg
         PROPERTIES
         LINK_OPTIONS "-pthread;-sPROXY_TO_PTHREAD")
 else()
-    add_executable(test-nanovg-app WIN32
+    add_executable(app-nanovg WIN32
         dummy.cpp)
 endif()
 
 # FIXME: Why do we need yfrm cwgl here?
-target_link_libraries(test-nanovg-app PRIVATE
+target_link_libraries(app-nanovg PRIVATE
     ${backendlibs}
     test-nanovg yfrm yfrm_main cwgl)
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL WindowsStore)
     set(rtmain
         ../../integ/yuniframe/src-sdl2/winrt/SDL2_winrt_main_NonXAML.cpp)
-    target_sources(test-nanovg-app PRIVATE ${rtmain})
+    target_sources(app-nanovg PRIVATE ${rtmain})
     set_source_files_properties(${rtmain}
         PROPERTIES COMPILE_FLAGS "/ZW")
-    target_link_libraries(test-nanovg-app LINK_PRIVATE
+    target_link_libraries(app-nanovg LINK_PRIVATE
         -nodefaultlib:vccorlib$<$<CONFIG:Debug>:d>
         -nodefaultlib:msvcrt$<$<CONFIG:Debug>:d>
         vccorlib$<$<CONFIG:Debug>:d>.lib
@@ -60,7 +60,7 @@ endif()
 
 if(TESTPKG)
     if(${TESTPKG} STREQUAL Xcode)
-        set_target_properties(test-nanovg-app
+        set_target_properties(app-nanovg
             PROPERTIES
             # https://cmake.org/cmake/help/latest/prop_tgt/MACOSX_BUNDLE_INFO_PLIST.html
             MACOSX_BUNDLE TRUE

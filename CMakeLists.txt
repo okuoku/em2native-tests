@@ -168,8 +168,11 @@ else()
         add_subdirectory(ribbon-integ)
     endif()
     # Build test dummy
-    #add_subdirectory(native/imgui test-imgui)
-    add_subdirectory(native/nanovg test-nanovg)
+    if("${YFRM_APPSYM}" STREQUAL imgui)
+        add_subdirectory(native/imgui test-imgui)
+    elseif("${YFRM_APPSYM}" STREQUAL nanovg)
+        add_subdirectory(native/nanovg test-nanovg)
+    endif()
 endif()
 
 message(STATUS "TESTSLOT: ${TESTSLOT}")

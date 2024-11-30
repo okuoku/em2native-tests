@@ -27,7 +27,7 @@ target_link_libraries(test-imgui
     PUBLIC yfrm cwgl)
 
 if(ANDROID)
-    set(apptgt test-imgui-so)
+    set(apptgt app-imgui)
     add_library(${apptgt} SHARED
         dummy.cpp)
 elseif(EMSCRIPTEN)

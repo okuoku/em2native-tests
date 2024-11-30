@@ -15,21 +15,46 @@ endif()
 
 set(buildtypes Debug RelWithDebInfo)
 
+set(apps_webgl2
+    app:WebGL2:nanovg)
+set(apps_webgl1
+    app:WebGL1:nanovg
+    #app:WebGL1:imgui
+    )
+set(apps_all
+    ${apps_webgl1}
+    ${apps_webgl2})
+
+set(backend_gpulevels_PlatformGLES
+    WebGL1 WebGL2)
+set(backend_gpulevels_CWGL-Vulkan
+    WebGL1)
+set(backend_gpulevels_CWGL-GLES
+    WebGL1 WebGL2)
+set(backend_gpulevels_ANGLE-Vulkan
+    WebGL1 WebGL2)
+set(backend_gpulevels_ANGLE-DirectX11
+    WebGL1 WebGL2)
+set(backend_gpulevels_ANGLE-Metal
+    WebGL1 WebGL2)
+
 set(android_variants
+    ${apps_all}
     dep:ANGLE-Vulkan
     dep:SDL2
     dep:GLSLang
     dep:UV
-    core:SDL2-PlatformGLES
-    core:SDL2-CWGL-Vulkan
-    core:SDL2-CWGL-GLES
-    core:SDL2-ANGLE-Vulkan
+    #core:SDL2-PlatformGLES
+    #core:SDL2-CWGL-Vulkan
+    #core:SDL2-CWGL-GLES
+    #core:SDL2-ANGLE-Vulkan
     pkgAndroid:SDL2-PlatformGLES
     pkgAndroid:SDL2-CWGL-Vulkan
     pkgAndroid:SDL2-CWGL-GLES
     pkgAndroid:SDL2-ANGLE-Vulkan)
 
 set(win_variants
+    ${apps_all}
     dep:ANGLE-DirectX11
     dep:ANGLE-Vulkan
     dep:SDL2
@@ -42,12 +67,14 @@ set(win_variants
     nccc:SDL2-ANGLE-DirectX11)
 
 set(winuwp_variants
+    ${apps_all}
     dep:ANGLE-DirectX11
     dep:SDL2
-    core:SDL2-ANGLE-DirectX11
+    #core:SDL2-ANGLE-DirectX11
     pkgUWP:SDL2-ANGLE-DirectX11)
 
 set(posix_variants
+    ${apps_all}
     # Assume Mesa and it provides both GLES and Vulkan
     dep:ANGLE-Vulkan
     dep:SDL2
@@ -59,6 +86,7 @@ set(posix_variants
     nccc:SDL2-PlatformGLES)
 
 set(apple_variants
+    ${apps_all}
     dep:ANGLE-Metal
     dep:SDL2
     dep:GLSLang
@@ -70,27 +98,30 @@ set(apple_variants
     nccc:SDL2-ANGLE-Metal)
 
 set(apple_mobile_variants
+    ${apps_all}
     dep:ANGLE-Metal
     dep:SDL2
     dep:GLSLang
     dep:UV
-    core:SDL2-ANGLE-Metal
-    core:SDL2-CWGL-Vulkan
-    core:SDL2-PlatformGLES
+    #core:SDL2-ANGLE-Metal
+    #core:SDL2-CWGL-Vulkan
+    #core:SDL2-PlatformGLES
     pkgXcode:SDL2-ANGLE-Metal
     pkgXcode:SDL2-CWGL-Vulkan
     pkgXcode:SDL2-PlatformGLES)
 
 set(apple_tv_variants # ANGLE does not support tvOS 
+    ${apps_all}
     dep:SDL2
     dep:GLSLang
     dep:UV
-    core:SDL2-CWGL-Vulkan
-    core:SDL2-PlatformGLES
+    #core:SDL2-CWGL-Vulkan
+    #core:SDL2-PlatformGLES
     pkgXcode:SDL2-CWGL-Vulkan
     pkgXcode:SDL2-PlatformGLES)
 
 set(emscripten_variants
+    ${apps_all}
     dep:SDL2
     core:Native-PlatformGLES
     core:SDL2-PlatformGLES)
@@ -128,7 +159,7 @@ function(buildandroidpkg nam)
     endif()
 endfunction()
 
-function(genandroidpkg nam slot)
+function(genandroidpkg nam slot gpulevel appsym)
     set(gradle-files
         gradlew
         gradlew.bat
@@ -161,7 +192,7 @@ function(genandroidpkg nam slot)
         res/mipmap-anydpi-v26/ic_launcher_round.xml)
 
     set(sdl2-files
-        AndroidManifest.xml
+        AndroidManifest.xml # XXX: Require GLES3 for WebGL2 gpulevel?
         java/org/cltn/yfrm/user_common/SDL2ActivityWrapper_test1.java
         )
 
@@ -180,6 +211,8 @@ function(genandroidpkg nam slot)
     set(YFRM_SLOT ${slot})
     set(YFRM_PFJAVADIR "\"../../../integ/ext/platform/SDL2/android-project/app/src/main/java\"")
     set(YFRM_BINARY_ROOT_GUESS "${buildroot}")
+    set(YFRM_GPULEVEL "${gpulevel}")
+    set(YFRM_APPSYM "${appsym}")
 
     foreach(r gradle template resources sdl2)
         foreach(e ${${r}-files})
@@ -193,7 +226,7 @@ function(genandroidpkg nam slot)
     endforeach()
 endfunction()
 
-function(gencmake nam proj platform abi slot)
+function(gencmake nam proj platform abi slot gpulevel appsym)
     set(sysroot)
     set(system_name)
     set(architectures)
@@ -204,9 +237,13 @@ function(gencmake nam proj platform abi slot)
     # Package ID (Reversed DNS name)
     set(pkgid org.okotama.yuniframe.test.${slot})
 
+    set(appopts "-DTESTSLOT=${slot}" 
+        "-DYFRM_WITH_PREBUILT_LIBS=1"
+        "-DYFRM_GPULEVEL=${gpulevel}" "-DYFRM_APPSYM=${appsym}")
+
     if(${proj} STREQUAL core)
         set(cmakeroot ${root})
-        set(buildtarget "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
+        set(buildtarget ${appopts})
         set(deftype -DCMAKE_DEFAULT_BUILD_TYPE=Debug)
         set(gen "Ninja Multi-Config")
     elseif(${proj} STREQUAL nccc)
@@ -222,10 +259,7 @@ function(gencmake nam proj platform abi slot)
         set(gen "Ninja Multi-Config")
     elseif(${proj} STREQUAL pkgXcode)
         set(cmakeroot ${root})
-        set(buildtarget 
-            "-DTESTPKGID=${pkgid}"
-            "-DTESTPKG=Xcode"
-            "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
+        set(buildtarget "-DTESTPKGID=${pkgid}" "-DTESTPKG=Xcode" ${appopts})
         set(gen "Xcode")
     elseif(${proj} STREQUAL pkgUWP)
         # NB: Changing system version requires complete clean build
@@ -235,8 +269,7 @@ function(gencmake nam proj platform abi slot)
             # 19041: Windows10 2004
             -DCMAKE_SYSTEM_VERSION=10.0.19041.0
             "-DTESTPKGID=${pkgid}"
-            "-DTESTPKG=UWP"
-            "-DTESTSLOT=${slot}" "-DYFRM_WITH_PREBUILT_LIBS=1")
+            "-DTESTPKG=UWP" ${appopts})
         set(gen "Visual Studio 17 2022")
     else()
         message(FATAL_ERROR "Unknown project (${proj})")
@@ -383,19 +416,128 @@ else()
     message(FATAL_ERROR "Couldn't determine variants")
 endif()
 
+# Pass1: Collect apps for platform
+set(build_variants)
 foreach(v ${variants})
     if(${v} MATCHES "([^:]*):([^:]*):([^:]*):(.*)")
         set(platform ${CMAKE_MATCH_1})
         set(abi ${CMAKE_MATCH_2})
         set(proj ${CMAKE_MATCH_3})
         set(slot ${CMAKE_MATCH_4})
+        if(${proj} STREQUAL "app")
+            if(${slot} MATCHES "([^:]*):(.*)")
+                set(gpulevel ${CMAKE_MATCH_1})
+                set(appsym ${CMAKE_MATCH_2})
+                list(APPEND apps_${platform}_${gpulevel} ${appsym})
+            else()
+                message(FATAL_ERROR "Invalid line: ${v}")
+            endif()
+        else()
+            list(APPEND build_variants ${v})
+        endif()
+    endif()
+endforeach()
 
-        set(is_cmake ON)
+# Pass2: Run build
+function(buildlib nam)
+    build(${nam})
+endfunction()
+function(genlib skippable nam proj platform abi slot)
+    set(generated OFF)
+    if(EXISTS ${buildroot}/${nam}/CMakeCache.txt)
+        set(generated ON)
+    endif()
+    if(${skippable} AND ${generated})
+        message(STATUS "Skip generation: ${nam}")
+    else()
+        message(STATUS "Genlib: ${nam}/${proj}/${platform}/${abi}/${slot}")
+        gencmake(${nam} ${proj} ${platform} ${abi} ${slot} NONE NONE)
+    endif()
+endfunction()
+
+function(buildapp nambase proj platform slot)
+    if("${slot}" MATCHES "([^-]*)-(.*)")
+        set(disp ${CMAKE_MATCH_1})
+        set(gpu ${CMAKE_MATCH_2})
+        foreach(gpulevel ${backend_gpulevels_${gpu}})
+            foreach(appsym ${apps_${platform}_${gpulevel}})
+                set(nam ${nambase}_${appsym}_${gpulevel})
+                set(genandroid OFF)
+                if(${proj} MATCHES "^pkgAndroid")
+                    set(genandroid ON)
+                endif()
+                if(genandroid)
+                    buildandroidpkg(${nam})
+                else()
+                    build(${nam})
+                endif()
+            endforeach()
+        endforeach()
+    else()
+        message(FATAL_ERROR "Unrecognized platform: ${slot}")
+    endif()
+endfunction()
+
+function(genapp skippable nambase proj platform abi slot)
+    if("${slot}" MATCHES "([^-]*)-(.*)")
+        set(disp ${CMAKE_MATCH_1})
+        set(gpu ${CMAKE_MATCH_2})
+        foreach(gpulevel ${backend_gpulevels_${gpu}})
+            foreach(appsym ${apps_${platform}_${gpulevel}})
+                set(nam ${nambase}_${appsym}_${gpulevel})
+                set(generated OFF)
+                set(genandroid OFF)
+                if(${proj} MATCHES "^pkgAndroid")
+                    set(genandroid ON)
+                    if(EXISTS ${buildroot}/${nam}/build.gradle)
+                        set(generated ON)
+                    endif()
+                else()
+                    if(EXISTS ${buildroot}/${nam}/CMakeCache.txt)
+                        set(generated ON)
+                    endif()
+                endif()
+                if(${skippable} AND ${generated})
+                    message(STATUS "Skip generation: ${nam}")
+                else()
+                    if(genandroid)
+                        genandroidpkg(${nam} ${slot} ${gpulevel} ${appsym})
+                    else()
+                        gencmake(${nam} ${proj} ${platform} ${abi} ${slot}
+                            ${gpulevel} ${appsym})
+                    endif()
+                endif()
+            endforeach()
+        endforeach()
+    else()
+        message(FATAL_ERROR "Unrecognized platform: ${slot}")
+    endif()
+endfunction()
+
+foreach(v ${build_variants})
+    message(STATUS "v: ${v}")
+    if(${v} MATCHES "([^:]*):([^:]*):([^:]*):(.*)")
+        set(platform ${CMAKE_MATCH_1})
+        set(abi ${CMAKE_MATCH_2})
+        set(proj ${CMAKE_MATCH_3})
+        set(slot ${CMAKE_MATCH_4})
+
+        set(build_app OFF)
+        set(skippable ON)
         if(${proj} MATCHES "^pkgAndroid")
             set(nam pkg-${platform}@${slot})
-            set(is_cmake OFF)
+            set(build_app ON)
+        elseif(${proj} MATCHES "^pkgXcode")
+            set(nam pkg-${platform}${abi}@${slot})
+            set(build_app ON)
+            # Xcode CMake generator does not handle regeneration
+            set(skippable OFF) 
         elseif(${proj} MATCHES "^pkg")
             set(nam pkg-${platform}${abi}@${slot})
+            set(build_app ON)
+        elseif(${proj} STREQUAL "core")
+            set(nam ${platform}${abi}@${slot})
+            set(build_app ON)
         elseif(${proj} STREQUAL "nccc")
             set(nam nccc-${platform}${abi}@${slot})
         else()
@@ -403,28 +545,24 @@ foreach(v ${variants})
         endif()
 
         if(PHASE STREQUAL generate)
-            if(is_cmake)
-                gencmake(${nam} ${proj} ${platform} ${abi} ${slot})
-            elseif(${proj} MATCHES "^pkgAndroid")
-                genandroidpkg(${nam} ${slot})
+            if(build_app)
+                genapp(OFF ${nam} ${proj} ${platform} ${abi} ${slot})
+            else()
+                genlib(OFF ${nam} ${proj} ${platform} ${abi} ${slot})
             endif()
         elseif(PHASE STREQUAL build)
-            if(${proj} MATCHES "^pkgAndroid")
-                buildandroidpkg(${nam})
+            if(build_app)
+                buildapp(${nam} ${proj} ${platform} ${slot})
             else()
-                build(${nam})
+                buildlib(${nam})
             endif()
         elseif(PHASE STREQUAL cycle)
-            if(is_cmake)
-                if(NOT EXISTS ${buildroot}/${nam}/CMakeCache.txt)
-                    gencmake(${nam} ${proj} ${platform} ${abi} ${slot})
-                endif()
-                build(${nam})
-            elseif(${proj} MATCHES "^pkgAndroid")
-                if(NOT EXISTS ${buildroot}/${nam}/build.gradle)
-                    genandroidpkg(${nam} ${slot})
-                endif()
-                buildandroidpkg(${nam})
+            if(build_app)
+                genapp(${skippable} ${nam} ${proj} ${platform} ${abi} ${slot})
+                buildapp(${nam} ${proj} ${platform} ${slot})
+            else()
+                genlib(${skippable} ${nam} ${proj} ${platform} ${abi} ${slot})
+                buildlib(${nam})
             endif()
         else()
             message(FATAL_ERROR "Unknown command: ${PHASE}")
