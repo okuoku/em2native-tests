@@ -4,6 +4,7 @@ set(mysubmodules
     integ/cwgl
     integ/ext/legacygl/tinygl-cmake
     integ/ext/cwgl/angle-static-cmake
+    integ/ext/nccc/napi-sdkfiles
     integ/nccc
     integ/yuniframe
     ribbon-integ
