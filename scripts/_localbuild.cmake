@@ -44,10 +44,6 @@ set(android_variants
     dep:SDL2
     dep:GLSLang
     dep:UV
-    #core:SDL2-PlatformGLES
-    #core:SDL2-CWGL-Vulkan
-    #core:SDL2-CWGL-GLES
-    #core:SDL2-ANGLE-Vulkan
     pkgAndroid:SDL2-PlatformGLES
     pkgAndroid:SDL2-CWGL-Vulkan
     pkgAndroid:SDL2-CWGL-GLES
@@ -70,7 +66,6 @@ set(winuwp_variants
     ${apps_all}
     dep:ANGLE-DirectX11
     dep:SDL2
-    #core:SDL2-ANGLE-DirectX11
     pkgUWP:SDL2-ANGLE-DirectX11)
 
 set(posix_variants
@@ -103,9 +98,6 @@ set(apple_mobile_variants
     dep:SDL2
     dep:GLSLang
     dep:UV
-    #core:SDL2-ANGLE-Metal
-    #core:SDL2-CWGL-Vulkan
-    #core:SDL2-PlatformGLES
     pkgXcode:SDL2-ANGLE-Metal
     pkgXcode:SDL2-CWGL-Vulkan
     pkgXcode:SDL2-PlatformGLES)
@@ -115,8 +107,6 @@ set(apple_tv_variants # ANGLE does not support tvOS
     dep:SDL2
     dep:GLSLang
     dep:UV
-    #core:SDL2-CWGL-Vulkan
-    #core:SDL2-PlatformGLES
     pkgXcode:SDL2-CWGL-Vulkan
     pkgXcode:SDL2-PlatformGLES)
 
