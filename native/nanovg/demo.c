@@ -793,8 +793,6 @@ void drawLines(NVGcontext* vg, float x, float y, float w, float h, float t)
 	nvgRestore(vg);
 }
 
-#define DEMOROOT "/Users/okuoku/stage/em2native-tests/native/nanovg/nanovg/"
-
 int loadDemoData(NVGcontext* vg, DemoData* data)
 {
 	int i;
