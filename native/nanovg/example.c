@@ -46,18 +46,85 @@ static void key(GLFWwindow* window, int key, int scancode, int action, int mods)
 		premult = !premult;
 }
 #endif
+static DemoData data;
+static NVGcontext* vg = NULL;
+static double prevt = 0;
+static uint64_t frm;
+static cwgl_ctx* ctx;
 
-int YFRM_ENTRYPOINT(int ac, char** av)
-{
-	DemoData data;
-	NVGcontext* vg = NULL;
-	//PerfGraph fps;
-	double prevt = 0;
-        uint64_t frm;
-        cwgl_ctx_t* ctx;
+int YFRM_FRAME(void* bogus){
+    double mx, my, t, dt;
+    int winWidth, winHeight;
+    int fbWidth, fbHeight;
+    float pxRatio;
 
-	//initGraph(&fps, GRAPH_RENDER_FPS, "Frame Time");
+    yfrm_frame_begin0(ctx);
+    // Consume events
+    {
+        int events;
+        int buf[128];
+        for(;;){
+            events = yfrm_query0(0, buf, 128);
+            if(events == 0){
+                break;
+            }
+        }
 
+    }
+
+    t = 1 * frm;
+    dt = 1; // FIXME: delta
+    prevt = t;
+    //updateGraph(&fps, dt);
+
+    mx = 0;
+    my = 0; // FIXME: mouse
+    fbWidth = 1280;
+    fbHeight = 720;
+    winWidth = 1280;
+    winHeight = 720;
+    // Calculate pixel ration for hi-dpi devices.
+    pxRatio = (float)fbWidth / (float)winWidth;
+
+    // Update and render
+    cwgl_viewport(ctx, 0, 0, fbWidth, fbHeight);
+    if (premult)
+        cwgl_clearColor(ctx, 0,0,0,0);
+    else
+        cwgl_clearColor(ctx, 0.3f, 0.3f, 0.32f, 1.0f);
+    cwgl_clear(ctx, COLOR_BUFFER_BIT|DEPTH_BUFFER_BIT|STENCIL_BUFFER_BIT);
+
+    cwgl_enable(ctx, BLEND);
+    cwgl_blendFunc(ctx, SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+    cwgl_enable(ctx, CULL_FACE);
+    cwgl_disable(ctx, DEPTH_TEST);
+
+    nvgBeginFrame(vg, winWidth, winHeight, pxRatio);
+
+    renderDemo(vg, mx,my, winWidth,winHeight, t, blowup, &data);
+    //renderGraph(vg, 5,5, &fps);
+
+    nvgEndFrame(vg);
+
+    if (screenshot) {
+        screenshot = 0;
+        saveScreenShot(fbWidth, fbHeight, premult, "dump.png");
+    }
+
+    cwgl_enable(ctx, DEPTH_TEST);
+
+    yfrm_frame_end0(ctx);
+    frm++;
+    return 0;
+
+#if 0
+exit:
+    freeDemoData(vg, &data);
+    nvgDeleteCWGL(vg);
+#endif
+}
+
+int YFRM_ENTRYPOINT(int ac, const char** av){
         ctx = yfrm_cwgl_ctx_create(1280,720,0,0);
         yfrm_frame_begin0(ctx); // Initial frame
 	vg = nvgCreateCWGL(ctx, NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
@@ -72,75 +139,5 @@ int YFRM_ENTRYPOINT(int ac, char** av)
 	prevt = 0.0; // FIXME: prev time
         frm = 0;
         yfrm_frame_end0(ctx); // Initial frame
-
-	while (1)
-	{
-		double mx, my, t, dt;
-		int winWidth, winHeight;
-		int fbWidth, fbHeight;
-		float pxRatio;
-
-                yfrm_frame_begin0(ctx);
-                // Consume events
-                {
-                    int events;
-                    int buf[128];
-                    for(;;){
-                        events = yfrm_query0(0, buf, 128);
-                        if(events == 0){
-                            break;
-                        }
-                    }
-                    
-                }
-
-		t = 1 * frm;
-		dt = 1; // FIXME: delta
-		prevt = t;
-		//updateGraph(&fps, dt);
-
-                mx = 0;
-                my = 0; // FIXME: mouse
-                fbWidth = 1280;
-                fbHeight = 720;
-                winWidth = 1280;
-                winHeight = 720;
-		// Calculate pixel ration for hi-dpi devices.
-		pxRatio = (float)fbWidth / (float)winWidth;
-
-		// Update and render
-		cwgl_viewport(ctx, 0, 0, fbWidth, fbHeight);
-		if (premult)
-			cwgl_clearColor(ctx, 0,0,0,0);
-		else
-			cwgl_clearColor(ctx, 0.3f, 0.3f, 0.32f, 1.0f);
-		cwgl_clear(ctx, COLOR_BUFFER_BIT|DEPTH_BUFFER_BIT|STENCIL_BUFFER_BIT);
-
-		cwgl_enable(ctx, BLEND);
-		cwgl_blendFunc(ctx, SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
-		cwgl_enable(ctx, CULL_FACE);
-		cwgl_disable(ctx, DEPTH_TEST);
-
-		nvgBeginFrame(vg, winWidth, winHeight, pxRatio);
-
-		renderDemo(vg, mx,my, winWidth,winHeight, t, blowup, &data);
-		//renderGraph(vg, 5,5, &fps);
-
-		nvgEndFrame(vg);
-
-		if (screenshot) {
-			screenshot = 0;
-			saveScreenShot(fbWidth, fbHeight, premult, "dump.png");
-		}
-		
-		cwgl_enable(ctx, DEPTH_TEST);
-
-                yfrm_frame_end0(ctx);
-                frm++;
-	}
-
-	freeDemoData(vg, &data);
-
-	nvgDeleteCWGL(vg);
 	return 0;
 }
