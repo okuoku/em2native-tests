@@ -31,13 +31,13 @@ if(ANDROID)
     add_library(${apptgt} SHARED
         dummy.cpp)
 elseif(EMSCRIPTEN)
-    set(apptgt test-imgui-so)
+    set(apptgt app-imgui)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
     
     add_executable(${apptgt} dummy.cpp)
     set_target_properties(${apptgt}
         PROPERTIES
-        LINK_OPTIONS "-pthread;-sPROXY_TO_PTHREAD")
+        LINK_OPTIONS "-pthread")
 else()
     set(apptgt test-imgui-app)
     add_executable(${apptgt} WIN32
