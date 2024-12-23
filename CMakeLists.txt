@@ -159,6 +159,13 @@ if(BUILD_NCCC_MODULE)
     set(YUNI_INPLACE_NCCC_MODULES_PREFIX "${debugloc}")
     # Build yuni only for now
     add_subdirectory(ribbon-integ/yuni yuni)
+    # Build Node-API stub
+    set(NCCC_DEBUG_MODULES_PREFIX "${debugloc}")
+
+    set(nodemodules "${CMAKE_CURRENT_LIST_DIR}/node_modules")
+    file(MAKE_DIRECTORY "${nodemodules}")
+    set(NCCC_DEBUG_NODE_MODULES "${nodemodules}")
+    add_subdirectory(integ/nccc/javascript/node-nccc node-nccc)
 else()
     # Build ribbon (Unused for now)
     if(NOT TESTPKG)
