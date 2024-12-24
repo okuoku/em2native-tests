@@ -25,3 +25,6 @@
 [submodule "native/nanovg/nanovg"]
 	path = native/nanovg/nanovg
 	url = https://github.com/memononen/nanovg
+[submodule "runtime"]
+	path = runtime
+	url = https://github.com/okuoku/em2native-runtime

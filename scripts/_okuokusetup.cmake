@@ -13,10 +13,12 @@ set(mysubmodules
     ribbon-integ/yuniribbit-proto
     miniio
     mediatools
+    runtime # => https://github.com/okuoku/em2native-runtime
     )
 
 set(rename_integ em2native-integ)
 set(rename_mediatools nccc_mediatools)
+set(rename_runtime em2native-runtime)
 
 foreach(e ${mysubmodules})
     if(rename_${e})
