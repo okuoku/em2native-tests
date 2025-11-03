@@ -1,17 +1,12 @@
 #
 # OUTPUTs:
 #     android_sdkmanager
-#     android_packages
-#     android_package_${pkg}_Version
 #     android_ndkversion (Latest NDK version)
 #     android_cmakeversion
 #     android_platformversion
 #
 
-macro(detect_android_sdk)
-    if(android_sdkmanager)
-        return()
-    endif()
+function(detect_android_sdk)
     message(STATUS "Detecting Android SDK Manager...")
     # Locate sdkmanager
     set(android_sdkmanager)
@@ -122,4 +117,8 @@ macro(detect_android_sdk)
     message(STATUS "cmakeversion: ${android_cmakeversion}")
     getlatestplatform(android_platformversion)
     message(STATUS "platformversion: ${android_platformversion}")
-endmacro()
+
+    foreach(e sdkmanager ndkversion cmakeversion platformversion)
+        set(android_${e} "${android_${e}}" PARENT_SCOPE)
+    endforeach()
+endfunction()

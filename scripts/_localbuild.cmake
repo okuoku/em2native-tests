@@ -8,14 +8,28 @@ set(android_abis armeabi-v7a arm64-v8a x86 x86_64)
 # Extract https://github.com/KhronosGroup/MoltenVK/releases/download/v1.2.10-rc2/MoltenVK-all.tar
 set(moltenvk_prefix "${CMAKE_CURRENT_LIST_DIR}/../_moltenvk/MoltenVK")
 
-detect_android_sdk()
-
-# FIXME: Hardcode
-set(emcmake "/Volumes/stage/repos/emsdk/upstream/emscripten/emcmake")
 
 if(DEFINED ENV{YUNIBUILD_IMAGE_TYPE})
+    # Docker, etc.
+    set(SKIP_NATIVE ON)
     if("$ENV{YUNIBUILD_IMAGE_TYPE}" STREQUAL yuniandroid)
-        set(SKIP_NATIVE ON)
+        detect_android_sdk()
+        set(HAVE_ANDROID_SDK ON)
+    endif()
+    if("$ENV{YUNIBUILD_IMAGE_TYPE}" STREQUAL yunimingw-x64)
+        set(TOOLCHAIN_MINGW_x64_C x86_64-w64-mingw32-gcc)
+        set(TOOLCHAIN_MINGW_x64_CXX x86_64-w64-mingw32-g++)
+        set(HAVE_MINGW_x64 ON)
+    endif()
+    if("$ENV{YUNIBUILD_IMAGE_TYPE}" STREQUAL yuniemscripten)
+        set(emcmake emcmake)
+        set(HAVE_EMSCRIPTEN_SDK ON)
+    endif()
+else()
+    # Local build
+    detect_android_sdk()
+    if(android_sdkmanager)
+        set(HAVE_ANDROID_SDK ON)
     endif()
 endif()
 
@@ -69,7 +83,10 @@ set(win_variants
     core:SDL2-ANGLE-DirectX11
     core:SDL2-ANGLE-Vulkan
     core:SDL2-CWGL-Vulkan
-    nccc:SDL2-ANGLE-DirectX11)
+)
+set(winmsvc_variants
+    nccc:SDL2-ANGLE-DirectX11
+)
 
 set(winuwp_variants
     ${apps_all}
@@ -140,7 +157,6 @@ function(build nam)
 endfunction()
 
 function(buildandroidpkg nam)
-    message(STATUS "Entering ${nam} (Android gradlew)")
     if(WIN32)
         set(ext .bat)
         set(pref)
@@ -148,11 +164,23 @@ function(buildandroidpkg nam)
         set(ext)
         set(pref ./)
     endif()
-    execute_process(COMMAND
-        ${pref}gradlew${ext} assemble
-        RESULT_VARIABLE rr
-        WORKING_DIRECTORY ${buildroot}/${nam}
+
+    if(DEFINED ENV{GRADLE_HOME})
+        message(STATUS "Entering ${nam} (System Gradle)")
+        execute_process(COMMAND
+            $ENV{GRADLE_HOME}/bin/gradle${ext} assemble
+            RESULT_VARIABLE rr
+            WORKING_DIRECTORY ${buildroot}/${nam}
         )
+    else()
+        message(STATUS "Entering ${nam} (Android gradlew)")
+        execute_process(COMMAND
+            ${pref}gradlew${ext} assemble
+            RESULT_VARIABLE rr
+            WORKING_DIRECTORY ${buildroot}/${nam}
+        )
+    endif()
+
     if(rr)
         message(FATAL_ERROR "Failed to build ${nam} (${rr})")
     endif()
@@ -292,6 +320,7 @@ function(gencmake nam proj platform abi slot gpulevel appsym)
 
     set(binaryroot "-DYFRM_BINARY_ROOT=${buildroot}/${platform}@${abi}")
 
+    message(STATUS "abi: ${abi}")
     if(${platform} STREQUAL iOSsim)
         set(architectures "-DCMAKE_OSX_ARCHITECTURES=${abi}")
         set(sysroot "-DCMAKE_OSX_SYSROOT=${xcode_prefix}/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk")
@@ -316,6 +345,12 @@ function(gencmake nam proj platform abi slot gpulevel appsym)
         set(architectures -DANDROID_ABI=${abi} -DANDROID_ARM_NEON=ON)
     elseif(${abi} MATCHES "^MSVCUWP")
         set(system_name -DCMAKE_SYSTEM_NAME=WindowsStore)
+    elseif(${abi} MATCHES "^Mingw(.*)")
+        set(abiarch ${CMAKE_MATCH_1})
+        set(compilers
+            -DCMAKE_SYSTEM_NAME=Windows
+            -DCMAKE_C_COMPILER=${TOOLCHAIN_MINGW_${abiarch}_C}
+            -DCMAKE_CXX_COMPILER=${TOOLCHAIN_MINGW_${abiarch}_CXX})
     else()
         # Native Windows, Mac, ...
     endif()
@@ -346,6 +381,7 @@ function(gencmake nam proj platform abi slot gpulevel appsym)
         ${toolchain_file}
         ${buildtarget}
         ${binaryroot}
+        ${compilers}
         RESULT_VARIABLE rr
         )
     if(rr)
@@ -355,7 +391,6 @@ endfunction()
 
 # Check environment
 if(DEFINED ENV{ANDROID_HOME})
-    set(has_android_sdk ON)
     file(TO_CMAKE_PATH "$ENV{ANDROID_HOME}" android_home)
     message(STATUS "android home = ${android_home}")
 endif()
@@ -378,7 +413,7 @@ endif()
 set(variants)
 
 # Add Android projects
-if(has_android_sdk)
+if(HAVE_ANDROID_SDK)
     foreach(v ${android_variants})
         if(${v} MATCHES "^pkgAndroid")
             list(APPEND variants Android:any:${v})
@@ -391,14 +426,24 @@ if(has_android_sdk)
 endif()
 
 # Add Emscripten projects
-if(EXISTS ${emcmake})
+if(HAVE_EMSCRIPTEN_SDK)
     foreach(v ${emscripten_variants})
         list(APPEND variants Emscripten:Wasm32Web:${v})
     endforeach()
 endif()
 
+# Add Mingw Win32/Win64 projects
+foreach(arch x64)
+    if(HAVE_MINGW_${arch})
+        foreach(v ${win_variants})
+            list(APPEND variants Windows:Mingw${arch}:${v})
+        endforeach()
+    endif()
+endforeach()
+
+
 if(WIN32)
-    foreach(v ${win_variants})
+    foreach(v ${win_variants} ${winmsvc_variants})
         list(APPEND variants Windows:MSVCx64:${v})
     endforeach()
     foreach(v ${winuwp_variants})
