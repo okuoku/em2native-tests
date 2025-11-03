@@ -1,13 +1,23 @@
 cmake_minimum_required(VERSION 3.12)
+include(${CMAKE_CURRENT_LIST_DIR}/detect_android_sdk.cmake)
 set(root0 ${CMAKE_CURRENT_LIST_DIR}/..)
 get_filename_component(root "${root0}" ABSOLUTE)
 set(buildroot ${root}/_build)
-set(ndkversion 27.0.12077973)
+set(android_abis armeabi-v7a arm64-v8a x86 x86_64)
+#set(android_abis x86_64)
 # Extract https://github.com/KhronosGroup/MoltenVK/releases/download/v1.2.10-rc2/MoltenVK-all.tar
 set(moltenvk_prefix "${CMAKE_CURRENT_LIST_DIR}/../_moltenvk/MoltenVK")
 
+detect_android_sdk()
+
 # FIXME: Hardcode
 set(emcmake "/Volumes/stage/repos/emsdk/upstream/emscripten/emcmake")
+
+if(DEFINED ENV{YUNIBUILD_IMAGE_TYPE})
+    if("$ENV{YUNIBUILD_IMAGE_TYPE}" STREQUAL yuniandroid)
+        set(SKIP_NATIVE ON)
+    endif()
+endif()
 
 if(NOT PHASE)
     set(PHASE generate)
@@ -42,7 +52,7 @@ set(android_variants
     dep:ANGLE-Vulkan
     dep:SDL2
     dep:GLSLang
-    dep:UV
+    # dep:UV # FIXME: It does not build on recent NDK
     pkgAndroid:SDL2-PlatformGLES
     pkgAndroid:SDL2-CWGL-Vulkan
     pkgAndroid:SDL2-CWGL-GLES
@@ -202,6 +212,18 @@ function(genandroidpkg nam slot gpulevel appsym)
     set(YFRM_BINARY_ROOT_GUESS "${buildroot}")
     set(YFRM_GPULEVEL "${gpulevel}")
     set(YFRM_APPSYM "${appsym}")
+    set(YFRM_NDKVERSION "${android_ndkversion}")
+    set(YFRM_PLATFORMVERSION "${android_platformversion}")
+    set(YFRM_CMAKEVERSION "${android_cmakeversion}")
+    set(abifilter)
+    foreach(abi IN LISTS android_abis)
+        if(NOT abifilter)
+            set(abifilter "'${abi}'")
+        else()
+            set(abifilter "${abifilter},'${abi}'")
+        endif()
+    endforeach()
+    set(YFRM_NDKABIFILTERS "${abifilter}")
 
     foreach(r gradle template resources sdl2)
         foreach(e ${${r}-files})
@@ -290,7 +312,7 @@ function(gencmake nam proj platform abi slot gpulevel appsym)
         # Using NDK toolchain file
         # https://developer.android.com/ndk/guides/cmake
         set(system_name "-DCMAKE_SYSTEM_NAME=Android")
-        set(toolchain_file "-DCMAKE_TOOLCHAIN_FILE=${android_home}/ndk/${ndkversion}/build/cmake/android.toolchain.cmake")
+        set(toolchain_file "-DCMAKE_TOOLCHAIN_FILE=${android_home}/ndk/${android_ndkversion}/build/cmake/android.toolchain.cmake")
         set(architectures -DANDROID_ABI=${abi} -DANDROID_ARM_NEON=ON)
     elseif(${abi} MATCHES "^MSVCUWP")
         set(system_name -DCMAKE_SYSTEM_NAME=WindowsStore)
@@ -361,7 +383,7 @@ if(has_android_sdk)
         if(${v} MATCHES "^pkgAndroid")
             list(APPEND variants Android:any:${v})
         else()
-            foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
+            foreach(abi IN LISTS android_abis)
                 list(APPEND variants Android:${abi}:${v})
             endforeach()
         endif()
@@ -397,9 +419,11 @@ elseif(APPLE)
         endforeach()
     endforeach()
 elseif(UNIX)
-    foreach(v ${posix_variants})
-        list(APPEND variants Posix:Native:${v})
-    endforeach()
+    if(NOT SKIP_NATIVE)
+        foreach(v ${posix_variants})
+            list(APPEND variants Posix:Native:${v})
+        endforeach()
+    endif()
 else()
     # FIXME: Implement Generic variants here.
     message(FATAL_ERROR "Couldn't determine variants")

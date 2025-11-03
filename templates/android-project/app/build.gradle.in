@@ -4,18 +4,19 @@ plugins {
 
 android {
     namespace 'org.cltn.yfrm'
-    compileSdk 34
+    ndkVersion "@YFRM_NDKVERSION@"
+    compileSdk @YFRM_PLATFORMVERSION@
     externalNativeBuild {
         cmake {
             path file('../../../CMakeLists.txt')
-            version '3.22.1'
+            version '@YFRM_CMAKEVERSION@'
         }
     }
 
     defaultConfig {
         applicationId "@YFRM_PKGID@"
         minSdk 22
-        targetSdk 34
+        targetSdk @YFRM_PLATFORMVERSION@
         versionCode 1
         versionName "1.0"
 
@@ -24,6 +25,10 @@ android {
                 arguments "-DYFRM_WITH_PREBUILT_LIBS=1", "-DYFRM_BINARY_ROOT_GUESS=@YFRM_BINARY_ROOT_GUESS@", "-DTESTSLOT=@YFRM_SLOT@", "-DYFRM_GPULEVEL=@YFRM_GPULEVEL@", "-DYFRM_APPSYM=@YFRM_APPSYM@"
                 targets "app-@YFRM_APPSYM@"
             }
+        }
+
+        ndk {
+            abiFilters @YFRM_NDKABIFILTERS@
         }
 
         sourceSets {

@@ -1,0 +1,125 @@
+#
+# OUTPUTs:
+#     android_sdkmanager
+#     android_packages
+#     android_package_${pkg}_Version
+#     android_ndkversion (Latest NDK version)
+#     android_cmakeversion
+#     android_platformversion
+#
+
+macro(detect_android_sdk)
+    if(android_sdkmanager)
+        return()
+    endif()
+    message(STATUS "Detecting Android SDK Manager...")
+    # Locate sdkmanager
+    set(android_sdkmanager)
+
+    if(DEFINED ENV{ANDROID_HOME})
+        set(__check "$ENV{ANDROID_HOME}/tools/bin/sdkmanager")
+        set(__check2 "$ENV{ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager")
+        if(EXISTS "${__check}")
+            set(android_sdkmanager "${__check}")
+        elseif(EXISTS "${__check2}")
+            set(android_sdkmanager "${__check2}")
+        endif()
+    else()
+        message(STATUS "... ANDROID_HOME not set (skip SDK detection)")
+        return()
+    endif()
+
+    message(STATUS "Android SDK Manager: ${android_sdkmanager}")
+
+    if(NOT android_sdkmanager)
+        message(STATUS "Cannot locate Android SDK Manager.")
+        return()
+    endif()
+
+    execute_process(
+        COMMAND ${android_sdkmanager} --list_installed --verbose
+        OUTPUT_VARIABLE out
+        RESULT_VARIABLE rr)
+
+    if(rr)
+        message(STATUS "Failed to exec SDK manager(${rr})")
+        return()
+    endif()
+
+    string(REPLACE "\r" "" __versions0 "${out}")
+    string(REPLACE ";" "__" __versions0 "${__versions0}")
+    string(REPLACE "\n" ";" __versions "${__versions0}")
+
+    set(__head)
+    set(__startread)
+    set(android_packages)
+    foreach(l ${__versions})
+        #message(STATUS "L: <${l}>")
+        if(__startread)
+            if("${l}" MATCHES "^([a-zA-Z0-9._-]+)")
+                set(__curpkg "${CMAKE_MATCH_1}")
+                list(APPEND android_packages "${__curpkg}")
+                message(STATUS "PKG: ${__curpkg}")
+            elseif("${l}" STREQUAL "")
+                message(STATUS "Done.")
+                set(__curpkg)
+            elseif(__curpkg)
+                if("${l}" MATCHES "[ \t]*([^:]*):[^ \t]*(.*)")
+                    set(__fild ${CMAKE_MATCH_1})
+                    set(__value0 ${CMAKE_MATCH_2})
+                    string(STRIP "${__value0}" __value)
+                    message(STATUS "KV: [${__fild}] = [${__value}]")
+                endif()
+                if(__fild)
+                    set(android_package_${__curpkg}_${__fild} ${__value})
+                endif()
+            endif()
+        elseif(__head)
+            # Ignore separator "--------------------------------------"
+            set(__startread ON)
+        elseif("${l}" STREQUAL "Installed packages:")
+            set(__head ON)
+        endif()
+    endforeach()
+
+    function(getlatest var pkgname)
+        set(v)
+        foreach(pkg IN LISTS android_packages)
+            if("${pkg}" MATCHES "^${pkgname}__")
+                set(p "${android_package_${pkg}_Version}")
+                if(NOT v)
+                    set(v "${p}")
+                elseif(v AND "${p}" VERSION_GREATER "${v}")
+                    set(v "${p}")
+                endif()
+            endif()
+        endforeach()
+        if(v)
+            set(${var} "${v}" PARENT_SCOPE)
+        endif()
+    endfunction()
+
+    function(getlatestplatform var)
+        set(v)
+        foreach(pkg IN LISTS android_packages)
+            if("${pkg}" MATCHES "^platforms__android-(.*)")
+                set(p "${CMAKE_MATCH_1}")
+                if(NOT v)
+                    set(v "${p}")
+                elseif(v AND "${p}" VERSION_GREATER "${v}")
+                    set(v "${p}")
+                endif()
+            endif()
+        endforeach()
+        if(v)
+            set(${var} "${v}" PARENT_SCOPE)
+        endif()
+    endfunction()
+
+    getlatest(android_ndkversion "ndk")
+    message(STATUS "ndkversion: ${android_ndkversion}")
+    getlatest(android_cmakeversion "cmake")
+    message(STATUS "cmakeversion: ${android_cmakeversion}")
+    getlatestplatform(android_platformversion)
+    message(STATUS "platformversion: ${android_platformversion}")
+endmacro()
