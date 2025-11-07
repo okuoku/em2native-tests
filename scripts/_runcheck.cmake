@@ -1,18 +1,25 @@
 #
 # INPUTs: ONLY (image name)
+find_program(CYGPATH cygpath) # Detect Cygwin
+include(${CMAKE_CURRENT_LIST_DIR}/detect_docker_images.cmake)
+
 if(ONLY)
     set(images ${ONLY}) 
 else()
-    set(images 
-        __LOCAL__ # Non Docker, local build
-        yunibuild-mingw-x64 
-        yunibuild-android
-        yunibuild-emscripten
-        #yunibuild-msvc17-amd64
-    )
+    set(images)
+    set(types mingw-x64 android emscripten)
+    detect_docker_images(yunibuild_image)
+    if(NOT CYGPATH)
+        list(APPEND images __LOCAL__)
+    endif()
+    foreach(t IN LISTS types)
+        if(yunibuild_image_${t})
+            list(APPEND images yunibuild-${t})
+            message(STATUS "Build: ${t}")
+        endif()
+    endforeach()
 endif()
 
-find_program(CYGPATH cygpath)
 if(CYGPATH OR WIN32)
     # Always use process isolation for faster build
     set(isolation --isolation process)

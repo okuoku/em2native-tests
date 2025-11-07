@@ -102,7 +102,7 @@ if(YFRM_CWGL_USE_ANGLE)
 endif()
 add_subdirectory(integ/proj/sdl2 sdl2)
 
-if("${CMAKE_SYSTEM_NAME}" STREQUAL WindowsStore OR EMSCRIPTEN)
+if("${CMAKE_SYSTEM_NAME}" STREQUAL WindowsStore OR EMSCRIPTEN OR ANDROID)
     # FIXME: miniio backend 
 else()
     add_subdirectory(proj/uv uv)
