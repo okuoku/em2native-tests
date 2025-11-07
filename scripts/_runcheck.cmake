@@ -3,16 +3,44 @@
 if(ONLY)
     set(images ${ONLY}) 
 else()
-    set(images local 
+    set(images 
+        __LOCAL__ # Non Docker, local build
         yunibuild-mingw-x64 
         yunibuild-android
         yunibuild-emscripten
+        #yunibuild-msvc17-amd64
     )
 endif()
 
+find_program(CYGPATH cygpath)
+if(CYGPATH OR WIN32)
+    # Always use process isolation for faster build
+    set(isolation --isolation process)
+else()
+    set(isolation)
+endif()
+
+cmake_path(SET root0 NORMALIZE ${CMAKE_CURRENT_LIST_DIR}/..)
+if(CYGPATH)
+    # Convert repository root into native path
+    execute_process(COMMAND cygpath -w ${root0} 
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE root)
+    message(STATUS "${root0} => ${root}")
+    set(container_work c:\\yuniframe)
+else()
+    # Use CMake path as is
+    set(root "${root0}")
+    set(container_work /yuniframe)
+endif()
+
+set(docker_run
+    docker run
+    -v${root}:${container_work}
+    ${isolation})
 
 foreach(img IN LISTS images)
-    if(${img} STREQUAL local)
+    if(${img} STREQUAL __LOCAL__)
         execute_process(
             COMMAND ${CMAKE_COMMAND} 
             -P ${CMAKE_CURRENT_LIST_DIR}/_localbuild.cmake
@@ -33,8 +61,7 @@ foreach(img IN LISTS images)
 
     else()
         execute_process(
-            COMMAND docker run --rm -t 
-            -v${CMAKE_CURRENT_LIST_DIR}/..:/yuniframe
+            COMMAND ${docker_run} --rm
             ${img} cmake -P /yuniframe/scripts/_localbuild.cmake
             RESULT_VARIABLE rr)
         if(rr)
@@ -43,8 +70,7 @@ foreach(img IN LISTS images)
 
         execute_process(
             COMMAND 
-            docker run --rm -t 
-            -v${CMAKE_CURRENT_LIST_DIR}/..:/yuniframe
+            ${docker_run} --rm
             ${img}
             cmake
             -DPHASE=cycle -P 

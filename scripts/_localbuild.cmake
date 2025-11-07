@@ -1,16 +1,24 @@
 cmake_minimum_required(VERSION 3.12)
 include(${CMAKE_CURRENT_LIST_DIR}/detect_android_sdk.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/detect_msvc.cmake)
 set(root0 ${CMAKE_CURRENT_LIST_DIR}/..)
-get_filename_component(root "${root0}" ABSOLUTE)
+set(root "${root0}")
 set(buildroot ${root}/_build)
+message(STATUS "buildroot: ${buildroot}")
 set(android_abis armeabi-v7a arm64-v8a x86 x86_64)
 #set(android_abis x86_64)
 # Extract https://github.com/KhronosGroup/MoltenVK/releases/download/v1.2.10-rc2/MoltenVK-all.tar
 set(moltenvk_prefix "${CMAKE_CURRENT_LIST_DIR}/../_moltenvk/MoltenVK")
 
+find_program(CYGPATH cygpath)
+
+if(CYGPATH)
+    message(STATUS "Skipping Native build because I'm Cygwin")
+    set(SKIP_NATIVE ON)
+endif()
 
 if(DEFINED ENV{YUNIBUILD_IMAGE_TYPE})
-    # Docker, etc.
+    # Inside Docker, etc.
     set(SKIP_NATIVE ON)
     if("$ENV{YUNIBUILD_IMAGE_TYPE}" STREQUAL yuniandroid)
         detect_android_sdk()
@@ -25,11 +33,22 @@ if(DEFINED ENV{YUNIBUILD_IMAGE_TYPE})
         set(emcmake emcmake)
         set(HAVE_EMSCRIPTEN_SDK ON)
     endif()
+    if("$ENV{YUNIBUILD_IMAGE_TYPE}" STREQUAL yunimsvc17-amd64)
+        set(HAVE_MSVC17 ON)
+        detect_msvc17()
+    endif()
 else()
     # Local build
     detect_android_sdk()
     if(android_sdkmanager)
         set(HAVE_ANDROID_SDK ON)
+    endif()
+    if(WIN32 OR CYGPATH)
+        detect_msvc17()
+        if(msvc17_vcvars64)
+            # Intentionally exclude Cygwin
+            set(HAVE_MSVC17 ON)
+        endif()
     endif()
 endif()
 
@@ -343,7 +362,7 @@ function(gencmake nam proj platform abi slot gpulevel appsym)
         set(system_name "-DCMAKE_SYSTEM_NAME=Android")
         set(toolchain_file "-DCMAKE_TOOLCHAIN_FILE=${android_home}/ndk/${android_ndkversion}/build/cmake/android.toolchain.cmake")
         set(architectures -DANDROID_ABI=${abi} -DANDROID_ARM_NEON=ON)
-    elseif(${abi} MATCHES "^MSVCUWP")
+    elseif(${abi} MATCHES "^MSVC17UWP")
         set(system_name -DCMAKE_SYSTEM_NAME=WindowsStore)
     elseif(${abi} MATCHES "^Mingw(.*)")
         set(abiarch ${CMAKE_MATCH_1})
@@ -356,9 +375,9 @@ function(gencmake nam proj platform abi slot gpulevel appsym)
     endif()
 
     if(${platform} STREQUAL Emscripten)
-        set(emcmake_prefix ${emcmake})
+        set(envprefix ${emcmake})
     else()
-        set(emcmake_prefix)
+        set(envprefix)
     endif()
 
     if(sysroot)
@@ -367,7 +386,7 @@ function(gencmake nam proj platform abi slot gpulevel appsym)
         message(STATUS "Configure ${nam} (${abi})")
     endif()
     execute_process(COMMAND
-        ${emcmake_prefix}
+        ${envprefix}
         ${CMAKE_COMMAND} -G "${gen}"
         -S ${cmakeroot}
         -B ${buildroot}/${nam}
@@ -441,13 +460,12 @@ foreach(arch x64)
     endif()
 endforeach()
 
-
-if(WIN32)
+if(HAVE_MSVC17)
     foreach(v ${win_variants} ${winmsvc_variants})
-        list(APPEND variants Windows:MSVCx64:${v})
+        list(APPEND variants Windows:MSVC17x64:${v})
     endforeach()
     foreach(v ${winuwp_variants})
-        list(APPEND variants Windows:MSVCUWPx64:${v})
+        list(APPEND variants Windows:MSVC17UWPx64:${v})
     endforeach()
 elseif(APPLE)
     foreach(v ${apple_variants})
