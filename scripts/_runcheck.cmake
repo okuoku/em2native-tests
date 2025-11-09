@@ -7,7 +7,15 @@ if(ONLY)
     set(images ${ONLY}) 
 else()
     set(images)
-    set(types mingw-x64 android emscripten)
+    set(types 
+        # Win32/Win64
+        mingw-x64 
+        # Web
+        emscripten
+        # Linux envs
+        steamruntime3 linuxmusl linuxglibc
+        # Platforms
+        android)
     detect_docker_images(yunibuild_image)
     if(NOT CYGPATH)
         list(APPEND images __LOCAL__)
