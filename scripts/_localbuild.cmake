@@ -13,13 +13,13 @@ set(moltenvk_prefix "${CMAKE_CURRENT_LIST_DIR}/../_moltenvk/MoltenVK")
 find_program(CYGPATH cygpath)
 
 if(CYGPATH)
-    message(STATUS "Skipping Native build because I'm Cygwin")
-    set(SKIP_NATIVE ON)
+    message(STATUS "Skipping Local build because I'm Cygwin")
+    set(SKIP_LOCAL ON)
 endif()
 
 if(DEFINED ENV{YUNIBUILD_IMAGE_TYPE})
     # Inside Docker, etc.
-    set(SKIP_NATIVE ON)
+    set(SKIP_LOCAL ON)
     if("$ENV{YUNIBUILD_IMAGE_TYPE}" STREQUAL yuniandroid)
         detect_android_sdk()
         set(HAVE_ANDROID_SDK ON)
@@ -114,16 +114,20 @@ set(winuwp_variants
     pkgUWP:SDL2-ANGLE-DirectX11)
 
 set(posix_variants
-    ${apps_all}
-    # Assume Mesa and it provides both GLES and Vulkan
-    dep:ANGLE-Vulkan
     dep:SDL2
-    dep:GLSLang
     dep:UV
     core:SDL2-PlatformGLES
+    nccc:SDL2-PlatformGLES)
+
+set(linux_variants
+    ${apps_all}
+    ${posix_variants}
+    dep:GLSLang
+    # Assume Mesa and it provides both GLES and Vulkan
+    dep:ANGLE-Vulkan
     core:SDL2-CWGL-Vulkan
     core:SDL2-ANGLE-Vulkan
-    nccc:SDL2-PlatformGLES)
+)
 
 set(apple_variants
     ${apps_all}
@@ -460,6 +464,7 @@ foreach(arch x64)
     endif()
 endforeach()
 
+# Windows MSVC
 if(HAVE_MSVC17)
     foreach(v ${win_variants} ${winmsvc_variants})
         list(APPEND variants Windows:MSVC17x64:${v})
@@ -467,29 +472,35 @@ if(HAVE_MSVC17)
     foreach(v ${winuwp_variants})
         list(APPEND variants Windows:MSVC17UWPx64:${v})
     endforeach()
-elseif(APPLE)
-    foreach(v ${apple_variants})
-        list(APPEND variants Mac:Native:${v})
-    endforeach()
-    foreach(m iOS:arm64 iOSsim:x86_64)
-        foreach(v ${apple_mobile_variants})
-            list(APPEND variants ${m}:${v})
+endif()
+
+# Local(not-in-containers) builds
+if(NOT SKIP_LOCAL)
+    # Apple platforms are local-only
+    if(APPLE)
+        foreach(v ${apple_variants})
+            list(APPEND variants Mac:Native:${v})
         endforeach()
-    endforeach()
-    foreach(m tvOS:arm64 tvOSsim:x86_64)
-        foreach(v ${apple_tv_variants})
-            list(APPEND variants ${m}:${v})
+        foreach(m iOS:arm64 iOSsim:x86_64)
+            foreach(v ${apple_mobile_variants})
+                list(APPEND variants ${m}:${v})
+            endforeach()
         endforeach()
-    endforeach()
-elseif(UNIX)
-    if(NOT SKIP_NATIVE)
+        foreach(m tvOS:arm64 tvOSsim:x86_64)
+            foreach(v ${apple_tv_variants})
+                list(APPEND variants ${m}:${v})
+            endforeach()
+        endforeach()
+    elseif(LINUX)
+        foreach(v ${linux_variants})
+            # Musl or Glibc or other libc
+            list(APPEND variants Linux:Local:${v})
+        endforeach()
+    elseif(UNIX)
         foreach(v ${posix_variants})
-            list(APPEND variants Posix:Native:${v})
+            list(APPEND variants Posix:Local:${v})
         endforeach()
     endif()
-else()
-    # FIXME: Implement Generic variants here.
-    message(FATAL_ERROR "Couldn't determine variants")
 endif()
 
 # Pass1: Collect apps for platform
