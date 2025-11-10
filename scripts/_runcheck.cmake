@@ -13,6 +13,7 @@ else()
         # Web
         emscripten
         # Linux envs
+        ubuntu fedora alpine
         steamruntime3 linuxmusl linuxglibc
         # Platforms
         android)

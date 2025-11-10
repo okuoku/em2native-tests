@@ -40,8 +40,23 @@ if(DEFINED ENV{YUNIBUILD_IMAGE_TYPE})
 elseif(DEFINED ENV{YUNIBUILD_LOCAL_TYPE})
     # Inside Docker or others for POSIXy builds
     set(SKIP_LOCAL OFF)
+    # FIXME: Bake these into images
+    set(find_alternative_toolchain_Alpine ON)
+    set(find_alternative_toolchain_Ubuntu ON)
+    set(find_alternative_toolchain_Fedora ON)
     if("$ENV{YUNIBUILD_LOCAL_TYPE}" STREQUAL Linux)
         set(LOCAL_VARIANT "$ENV{YUNIBUILD_LOCAL_VARIANT}")
+        if(find_alternative_toolchain_${LOCAL_VARIANT})
+            set(LOCAL_VARIANT_HAS_ALTERNATIVE_TOOLCHAIN ON)
+            find_program(CHECK_GCC g++)
+            find_program(CHECK_CLANG clang++)
+            if(CHECK_GCC)
+                set(LOCAL_VARIANT_GCC ON)
+            endif()
+            if(CHECK_CLANG)
+                set(LOCAL_VARIANT_CLANG ON)
+            endif()
+        endif()
     endif()
 else()
     # Local build
@@ -380,6 +395,18 @@ function(gencmake nam proj platform abi slot gpulevel appsym)
             -DCMAKE_SYSTEM_NAME=Windows
             -DCMAKE_C_COMPILER=${TOOLCHAIN_MINGW_${abiarch}_C}
             -DCMAKE_CXX_COMPILER=${TOOLCHAIN_MINGW_${abiarch}_CXX})
+    elseif(${platform} STREQUAL "Linux")
+        if(${abi} MATCHES "Gcc")
+            set(compilers
+                -DCMAKE_SYSTEM_NAME=Linux
+                -DCMAKE_C_COMPILER=gcc
+                -DCMAKE_CXX_COMPILER=g++)
+        elseif(${abi} MATCHES "Clang")
+            set(compilers
+                -DCMAKE_SYSTEM_NAME=Linux
+                -DCMAKE_C_COMPILER=clang
+                -DCMAKE_CXX_COMPILER=clang++)
+        endif()
     else()
         # Native Windows, Mac, ...
     endif()
@@ -502,8 +529,15 @@ if(NOT SKIP_LOCAL)
             # Musl or Glibc or other libc
             if(NOT LOCAL_VARIANT)
                 list(APPEND variants Linux:Local:${v})
-            else()
+            elseif(NOT LOCAL_VARIANT_HAS_ALTERNATIVE_TOOLCHAIN)
                 list(APPEND variants Linux:${LOCAL_VARIANT}:${v})
+            else()
+                if(LOCAL_VARIANT_GCC)
+                    list(APPEND variants Linux:${LOCAL_VARIANT}Gcc:${v})
+                endif()
+                if(LOCAL_VARIANT_CLANG)
+                    list(APPEND variants Linux:${LOCAL_VARIANT}Clang:${v})
+                endif()
             endif()
         endforeach()
     elseif(UNIX)
