@@ -1,7 +1,7 @@
 
 function(detect_docker_images prefix)
     execute_process(COMMAND
-        docker images -n
+        docker images
         OUTPUT_VARIABLE out
         ERROR_VARIABLE bogus
         RESULT_VARIABLE rr)
