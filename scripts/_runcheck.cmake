@@ -9,7 +9,7 @@ else()
     set(images)
     set(types 
         # Win32/Win64
-        mingw-x64 
+        mingw-x64 msvc17-amd64
         # Web
         emscripten
         # Linux envs
@@ -50,6 +50,12 @@ else()
     set(container_work /yuniframe)
 endif()
 
+if(CYGPATH OR WIN32)
+    set(localbuild_script c:\\yuniframe\\scripts\\_localbuild.cmake)
+else()
+    set(localbuild_script /yuniframe/scripts/_localbuild.cmake)
+endif()
+
 set(docker_run
     docker run
     -v${root}:${container_work}
@@ -78,7 +84,7 @@ foreach(img IN LISTS images)
     else()
         execute_process(
             COMMAND ${docker_run} --rm
-            ${img} cmake -P /yuniframe/scripts/_localbuild.cmake
+            ${img} cmake -P ${localbuild_script}
             RESULT_VARIABLE rr)
         if(rr)
             message(FATAL_ERROR "Failed to run generation (on ${img})")
@@ -89,8 +95,7 @@ foreach(img IN LISTS images)
             ${docker_run} --rm
             ${img}
             cmake
-            -DPHASE=cycle -P 
-            /yuniframe/scripts/_localbuild.cmake
+            -DPHASE=cycle -P ${localbuild_script}
             RESULT_VARIABLE rr)
 
         if(rr)
