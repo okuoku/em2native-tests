@@ -9,7 +9,8 @@ else()
     set(images)
     set(types 
         # Win32/Win64
-        mingw-x64 msvc17-amd64
+        mingw-x64 # Linux container
+        msvc17-amd64 msys2-ucrt64 msys2-i686 # win container
         # Web
         emscripten
         # Linux envs
