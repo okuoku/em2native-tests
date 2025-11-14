@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 include(${CMAKE_CURRENT_LIST_DIR}/detect_android_sdk.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/detect_msvc.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/detect_moltenvk.cmake)
 
 find_program(CYGPATH cygpath)
 
@@ -19,9 +20,6 @@ set(buildroot ${root}/_build)
 message(STATUS "buildroot: ${buildroot}")
 set(android_abis armeabi-v7a arm64-v8a x86 x86_64)
 set(vs_gen "Visual Studio 17 2022")
-# Extract https://github.com/KhronosGroup/MoltenVK/releases/download/v1.2.10-rc2/MoltenVK-all.tar
-set(moltenvk_prefix "${CMAKE_CURRENT_LIST_DIR}/../_moltenvk/MoltenVK")
-
 
 if(CYGPATH)
     message(STATUS "Skipping Local build because I'm Cygwin")
@@ -559,6 +557,7 @@ endif()
 if(NOT SKIP_LOCAL)
     # Apple platforms are local-only
     if(APPLE)
+        detect_moltenvk()
         foreach(v ${apple_variants})
             list(APPEND variants Mac:Native:${v})
         endforeach()
