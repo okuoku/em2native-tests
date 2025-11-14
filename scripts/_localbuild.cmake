@@ -133,7 +133,7 @@ set(android_variants
     pkgAndroid:SDL2-CWGL-GLES
     pkgAndroid:SDL2-ANGLE-Vulkan)
 
-set(win_variants
+set(win64_variants # MSVC and MinGW64
     ${apps_all}
     dep:ANGLE-DirectX11
     dep:ANGLE-Vulkan
@@ -145,7 +145,19 @@ set(win_variants
     core:SDL2-ANGLE-Vulkan
     core:SDL2-CWGL-Vulkan
 )
-set(winmsvc_variants
+set(win32_variants # MinGW32 FIXME: Add MSVC later
+    ${apps_all}
+    dep:ANGLE-DirectX11
+    dep:ANGLE-Vulkan
+    dep:SDL2
+    dep:GLSLang
+    dep:UV
+    #core:SDL2-PlatformGLES # Prepare import library or use SDL loader
+    core:SDL2-ANGLE-DirectX11
+    core:SDL2-ANGLE-Vulkan
+    core:SDL2-CWGL-Vulkan
+)
+set(windesktop_variants # Only on Win64 (as now require NAPI)
     nccc:SDL2-ANGLE-DirectX11
 )
 
@@ -522,17 +534,20 @@ if(HAVE_EMSCRIPTEN_SDK)
 endif()
 
 # Add Mingw Win32/Win64 projects
-foreach(arch x64 i686)
-    if(HAVE_MINGW_${arch})
-        foreach(v ${win_variants})
-            list(APPEND variants Windows:Mingw${arch}:${v})
-        endforeach()
-    endif()
-endforeach()
+if(HAVE_MINGW_x64)
+    foreach(v ${win64_variants} ${windesktop_variants})
+        list(APPEND variants Windows:Mingwx64:${v})
+    endforeach()
+endif()
+if(HAVE_MINGW_i686)
+    foreach(v ${win32_variants})
+        list(APPEND variants Windows:Mingwi686:${v})
+    endforeach()
+endif()
 
 # Windows MSVC
 if(HAVE_MSVC17)
-    foreach(v ${win_variants} ${winmsvc_variants})
+    foreach(v ${win64_variants} ${windesktop_variants})
         list(APPEND variants Windows:MSVC17x64:${v})
     endforeach()
     foreach(v ${winuwp_variants})
